@@ -56,20 +56,14 @@ export default function ContactPage() {
     {
       icon: Phone,
       title: 'Telefon',
-      content: '+90 (850) 123 45 67',
-      link: 'tel:+908501234567'
+      content: '+90 501 052 33 06',
+      link: 'tel:+905010523306'
     },
     {
       icon: Mail,
       title: 'E-posta',
       content: 'iletisim@dereceuzem.com',
       link: 'mailto:iletisim@dereceuzem.com'
-    },
-    {
-      icon: MapPin,
-      title: 'Adres',
-      content: 'Eğitim Vadisi, Teknopark Binası No:1 Istanbul / Türkiye',
-      link: '#'
     }
   ];
 
