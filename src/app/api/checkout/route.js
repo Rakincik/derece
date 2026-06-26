@@ -90,8 +90,8 @@ export async function POST(request) {
       );
     }
 
-    // Calculate subtotal from DB prices
-    const subtotal = dbProducts.reduce((sum, p) => sum + p.price, 0);
+    // Calculate subtotal from DB prices (respecting discounted price if set)
+    const subtotal = dbProducts.reduce((sum, p) => sum + (p.discountedPrice || p.price), 0);
 
     // 5. Coupon validation
     let discount = 0;
@@ -112,7 +112,7 @@ export async function POST(request) {
             // Apply discount to any products in the cart that match the restricted IDs list
             const targetProducts = dbProducts.filter(p => coupon.productIds.includes(p.id));
             if (targetProducts.length > 0) {
-              const targetSubtotal = targetProducts.reduce((sum, p) => sum + p.price, 0);
+              const targetSubtotal = targetProducts.reduce((sum, p) => sum + (p.discountedPrice || p.price), 0);
               if (coupon.discountType === 'PERCENTAGE') {
                 discount = (targetSubtotal * coupon.discountValue) / 100;
               } else if (coupon.discountType === 'FIXED') {
@@ -194,11 +194,12 @@ export async function POST(request) {
     await prisma.$transaction(async (tx) => {
       for (const product of dbProducts) {
         // Calculate proportional amount for this item
-        let amount = product.price;
+        const itemPrice = product.discountedPrice || product.price;
+        let amount = itemPrice;
         if (discount > 0 && subtotal > 0) {
-          const itemProportion = product.price / subtotal;
+          const itemProportion = itemPrice / subtotal;
           const itemDiscount = discount * itemProportion;
-          amount = Math.max(0, product.price - itemDiscount);
+          amount = Math.max(0, itemPrice - itemDiscount);
         }
 
         // Apply installment commission if applicable
