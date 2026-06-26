@@ -5,8 +5,10 @@ import StatsCounter from '@/components/home/StatsCounter';
 import Testimonials from '@/components/home/Testimonials';
 import TrustBadges from '@/components/home/TrustBadges';
 import Categories from '@/components/home/Categories';
+import HomeSlider from '@/components/home/HomeSlider';
 import prisma from '@/lib/db';
 import { mapProduct } from '@/lib/productHelper';
+
 
 export const revalidate = 60;
 
@@ -79,21 +81,47 @@ export default async function HomePage() {
   const showCampaign = settings.show_campaign === undefined ? true : settings.show_campaign === 'true';
   const showStats = settings.show_stats === undefined ? true : settings.show_stats === 'true';
   const showTestimonials = settings.show_testimonials === undefined ? true : settings.show_testimonials === 'true';
+  const showSlider = settings.show_slider === 'true';
 
-  const defaultOrder = ['hero', 'bento', 'products', 'campaign', 'stats', 'testimonials', 'badges'];
+  let sliders = [];
+  if (settings.homepage_sliders) {
+    try {
+      sliders = JSON.parse(settings.homepage_sliders);
+    } catch (e) {
+      console.error('Sliders parse error:', e);
+    }
+  }
+
+  const defaultOrder = ['slider', 'hero', 'bento', 'products', 'campaign', 'stats', 'testimonials', 'badges'];
   let sectionOrder = defaultOrder;
   if (settings.homepage_section_order) {
     try {
       sectionOrder = JSON.parse(settings.homepage_section_order);
+      if (!sectionOrder.includes('slider')) {
+        sectionOrder = ['slider', ...sectionOrder];
+      }
     } catch (e) {
       sectionOrder = defaultOrder;
     }
   }
 
+  const visibleSections = sectionOrder.filter(sec => {
+    if (sec === 'slider') return showSlider;
+    if (sec === 'hero') return showHero;
+    if (sec === 'bento') return showBento;
+    if (sec === 'campaign') return showCampaign;
+    if (sec === 'stats') return showStats;
+    if (sec === 'testimonials') return showTestimonials;
+    return true;
+  });
+  const firstVisibleSection = visibleSections[0];
+
   return (
     <>
       {sectionOrder.map((section) => {
         switch (section) {
+          case 'slider':
+            return showSlider ? <HomeSlider key="slider" sliders={sliders} isFirst={firstVisibleSection === 'slider'} /> : null;
           case 'hero':
             return showHero ? <HeroSection key="hero" settings={settings} /> : null;
           case 'bento':
