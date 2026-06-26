@@ -7,7 +7,8 @@ import {
   X, Check, AlertCircle, ShoppingBag, Send, BookOpen, Layers, 
   PlayCircle, HelpCircle, Mail, Key, Gift, Eye, MessageSquare, CheckSquare, Trash, Clock, Menu, ChevronDown, ArrowUp, ArrowDown,
   Layout, Star,
-  GraduationCap, Award, Calculator, Compass, Languages, Cpu, Sparkles, PenTool, History, FlaskConical, Globe
+  GraduationCap, Award, Calculator, Compass, Languages, Cpu, Sparkles, PenTool, History, FlaskConical, Globe,
+  LayoutGrid, List
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,6 +75,13 @@ export default function AdminDashboard() {
 
   // Search Filter state
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Products Management filter/search/sort/view state
+  const [productsViewMode, setProductsViewMode] = useState('list'); // list or grid
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [productFilterCategory, setProductFilterCategory] = useState('');
+  const [productFilterType, setProductFilterType] = useState('');
+  const [productSortBy, setProductSortBy] = useState('newest'); // newest, oldest, price-asc, price-desc, alphabet
 
   // Grant Access Form states
   const [grantEmail, setGrantEmail] = useState('');
@@ -1056,6 +1064,37 @@ export default function AdminDashboard() {
     }
   };
 
+  // Filtered and Sorted Products
+  const filteredProducts = products.filter(product => {
+    const query = productSearchQuery.toLowerCase().trim();
+    const matchesSearch = !query || 
+      product.title.toLowerCase().includes(query) || 
+      product.description.toLowerCase().includes(query) || 
+      product.type.toLowerCase().includes(query);
+
+    const matchesCategory = !productFilterCategory || product.categoryId === productFilterCategory;
+    const matchesType = !productFilterType || product.type === productFilterType;
+
+    return matchesSearch && matchesCategory && matchesType;
+  }).sort((a, b) => {
+    if (productSortBy === 'newest') {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }
+    if (productSortBy === 'oldest') {
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    }
+    if (productSortBy === 'price-asc') {
+      return a.price - b.price;
+    }
+    if (productSortBy === 'price-desc') {
+      return b.price - a.price;
+    }
+    if (productSortBy === 'alphabet') {
+      return a.title.localeCompare(b.title, 'tr');
+    }
+    return 0;
+  });
+
   // Metrics calculating
   const totalRevenue = orders.filter(o => o.paymentStatus === 'SUCCESS').reduce((sum, o) => sum + o.amount, 0);
   const totalSales = orders.filter(o => o.paymentStatus === 'SUCCESS').length;
@@ -1341,54 +1380,282 @@ export default function AdminDashboard() {
               <div>
                 {/* Products Management */}
                 {activeSection === 'products' && (
-                  <div>
-                    {products.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {products.map((product) => (
-                          <div key={product.id} className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden flex flex-col hover:shadow-lg hover:border-slate-350 transition-all">
-                            <div className="relative aspect-[16/10] bg-slate-100 flex items-center justify-center border-b border-slate-100">
-                              <img 
-                                src={product.coverImage || '/covers/kombo.png'} 
-                                alt={product.title} 
-                                className="w-full h-full object-cover"
-                              />
-                              <span className="absolute top-4 right-4 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/90 border border-slate-200 text-slate-700 shadow-sm">
-                                {product.type}
-                              </span>
-                            </div>
-                            <div className="p-5 flex-1 flex flex-col justify-between">
-                              <div>
-                                <h3 className="font-bold text-md text-slate-800 mb-1.5 line-clamp-1">{product.title}</h3>
-                                <p className="text-slate-500 text-xs leading-relaxed line-clamp-2 mb-4">{product.description}</p>
+                  <div className="space-y-6">
+                    {/* Filtering and Layout Toolbar */}
+                    <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
+                      {/* Search & Filters */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={productSearchQuery}
+                            onChange={(e) => setProductSearchQuery(e.target.value)}
+                            placeholder="Eğitim paketi ara..."
+                            className="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors"
+                          />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                          </div>
+                          {productSearchQuery && (
+                            <button
+                              onClick={() => setProductSearchQuery('')}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Category Filter */}
+                        <div className="relative">
+                          <select
+                            value={productFilterCategory}
+                            onChange={(e) => setProductFilterCategory(e.target.value)}
+                            className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors appearance-none cursor-pointer"
+                          >
+                            <option value="">Tüm Kategoriler</option>
+                            {categoriesList.map(cat => (
+                              <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+
+                        {/* Type Filter */}
+                        <div className="relative">
+                          <select
+                            value={productFilterType}
+                            onChange={(e) => setProductFilterType(e.target.value)}
+                            className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors appearance-none cursor-pointer"
+                          >
+                            <option value="">Tüm Ürün Tipleri</option>
+                            <option value="Video Ders Seti">Video Ders Seti</option>
+                            <option value="Dijital Kitap">Dijital Kitap</option>
+                            <option value="Deneme Paketi">Deneme Paketi</option>
+                            <option value="Kombo Paket">Kombo Paket</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+
+                        {/* Sorting */}
+                        <div className="relative">
+                          <select
+                            value={productSortBy}
+                            onChange={(e) => setProductSortBy(e.target.value)}
+                            className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors appearance-none cursor-pointer"
+                          >
+                            <option value="newest">En Yeni Eklenenler</option>
+                            <option value="oldest">En Eski Eklenenler</option>
+                            <option value="price-asc">Fiyat: Düşükten Yükseğe</option>
+                            <option value="price-desc">Fiyat: Yüksekten Düşüğe</option>
+                            <option value="alphabet">İsim: A - Z</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* View Switcher Controls */}
+                      <div className="flex items-center gap-2 border-l border-slate-100 pl-0 xl:pl-4 justify-end">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 hidden sm:inline-block">Görünüm:</span>
+                        <div className="flex bg-slate-105 bg-slate-100 p-1 rounded-xl gap-0.5 border border-slate-200/60">
+                          <button
+                            type="button"
+                            onClick={() => setProductsViewMode('list')}
+                            className={`p-2 rounded-lg transition-all ${
+                              productsViewMode === 'list'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/30'
+                                : 'text-slate-400 hover:text-slate-700'
+                            }`}
+                            title="Liste Görünümü"
+                          >
+                            <List className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProductsViewMode('grid')}
+                            className={`p-2 rounded-lg transition-all ${
+                              productsViewMode === 'grid'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/30'
+                                : 'text-slate-400 hover:text-slate-700'
+                            }`}
+                            title="Grid Görünümü"
+                          >
+                            <LayoutGrid className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {filteredProducts.length > 0 ? (
+                      productsViewMode === 'grid' ? (
+                        /* Grid View */
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredProducts.map((product) => (
+                            <div key={product.id} className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden flex flex-col hover:shadow-lg hover:border-slate-350 transition-all">
+                              <div className="relative aspect-[16/10] bg-slate-100 flex items-center justify-center border-b border-slate-100">
+                                <img 
+                                  src={product.coverImage || '/covers/kombo.png'} 
+                                  alt={product.title} 
+                                  className="w-full h-full object-cover"
+                                />
+                                <span className="absolute top-4 right-4 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/90 border border-slate-200 text-slate-700 shadow-sm">
+                                  {product.type}
+                                </span>
                               </div>
-                              
-                              <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
-                                <span className="font-black text-slate-900 text-md">{product.price} ₺</span>
-                                <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => handleOpenEditModal(product)}
-                                    className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                                  >
-                                    <Edit3 className="w-4 h-4" />
-                                  </button>
-                                  <button 
-                                    onClick={() => handleDeleteProduct(product.id)}
-                                    className="p-2 rounded-xl bg-red-50 border border-red-100 text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                              <div className="p-5 flex-1 flex flex-col justify-between">
+                                <div>
+                                  <div className="flex items-center gap-1.5 mb-1.5">
+                                    <h3 className="font-bold text-md text-slate-800 line-clamp-1">{product.title}</h3>
+                                    {product.isFeatured && (
+                                      <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-605 text-amber-600 border border-amber-100 text-[8px] font-black uppercase tracking-wider shrink-0">Öne Çıkan</span>
+                                    )}
+                                  </div>
+                                  <p className="text-slate-505 text-slate-500 text-xs leading-relaxed line-clamp-2 mb-4">{product.description}</p>
+                                </div>
+                                
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
+                                  <div className="flex flex-col">
+                                    <span className="font-black text-slate-900 text-md">{product.price} ₺</span>
+                                    {product.discountedPrice && (
+                                      <span className="text-[10px] text-slate-400 line-through font-semibold">{product.discountedPrice} ₺</span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => handleOpenEditModal(product)}
+                                      className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-655 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteProduct(product.id)}
+                                      className="p-2 rounded-xl bg-red-50 border border-red-100 text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                          ))}
+                        </div>
+                      ) : (
+                        /* List (Table) View */
+                        <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50">
+                                  <th className="py-4 px-6 w-20">Kapak</th>
+                                  <th className="py-4 px-6">Eğitim Paketi / Başlık</th>
+                                  <th className="py-4 px-6">Ürün Tipi</th>
+                                  <th className="py-4 px-6">Kategori</th>
+                                  <th className="py-4 px-6">Fiyat</th>
+                                  <th className="py-4 px-6">Rozetler</th>
+                                  <th className="py-4 px-6">Kayıt Tarihi</th>
+                                  <th className="py-4 px-6 text-right">Aksiyonlar</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredProducts.map((product) => {
+                                  const category = categoriesList.find(c => c.id === product.categoryId);
+                                  return (
+                                    <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
+                                      <td className="py-3 px-6">
+                                        <div className="w-12 aspect-[16/10] rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shadow-sm">
+                                          <img src={product.coverImage || '/covers/kombo.png'} alt={product.title} className="w-full h-full object-cover" />
+                                        </div>
+                                      </td>
+                                      <td className="py-3 px-6">
+                                        <div className="font-bold text-slate-800 line-clamp-1">{product.title}</div>
+                                        <div className="text-[10px] text-slate-400 truncate max-w-xs font-medium" title={product.description}>{product.description}</div>
+                                      </td>
+                                      <td className="py-3 px-6">
+                                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                                          {product.type}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 px-6">
+                                        {category ? (
+                                          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                                            <span className={`w-2 h-2 rounded-full bg-gradient-to-br ${category.color || 'from-blue-500 to-indigo-600'}`} />
+                                            {category.name}
+                                          </div>
+                                        ) : (
+                                          <span className="text-slate-400 text-xs font-medium">-</span>
+                                        )}
+                                      </td>
+                                      <td className="py-3 px-6">
+                                        <div className="font-bold text-slate-900">{product.price} ₺</div>
+                                        {product.discountedPrice && (
+                                          <div className="text-[10px] text-slate-400 line-through font-semibold">{product.discountedPrice} ₺</div>
+                                        )}
+                                      </td>
+                                      <td className="py-3 px-6">
+                                        <div className="flex gap-1.5 flex-wrap">
+                                          {product.isFeatured && (
+                                            <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100 text-[8px] font-black uppercase tracking-wider">Öne Çıkan</span>
+                                          )}
+                                          {product.isBestseller && (
+                                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 text-[8px] font-black uppercase tracking-wider">Çok Satan</span>
+                                          )}
+                                          {!product.isFeatured && !product.isBestseller && (
+                                            <span className="text-slate-400 text-[10px] font-medium">-</span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="py-3 px-6 text-xs text-slate-450 font-medium">
+                                        {new Date(product.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                      </td>
+                                      <td className="py-3 px-6 text-right">
+                                        <div className="flex justify-end gap-2">
+                                          <button
+                                            onClick={() => handleOpenEditModal(product)}
+                                            className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-655 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                                          >
+                                            <Edit3 className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteProduct(product.id)}
+                                            className="p-1.5 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )
                     ) : (
                       <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center max-w-md mx-auto shadow-sm">
                         <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-slate-800 mb-2">Henüz Eğitim Paketi Eklenmemiş</h3>
-                        <p className="text-slate-500 text-sm mb-6 leading-relaxed">Yeni Ürün Ekle butonuna basarak ilk ürününüzü oluşturabilirsiniz.</p>
-                        <button onClick={handleOpenAddModal} className="px-5 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition-colors">Ürün Ekle</button>
+                        <h3 className="text-lg font-bold text-slate-805 mb-2">Arama Sonucunda Ürün Bulunamadı</h3>
+                        <p className="text-slate-500 text-sm mb-6 leading-relaxed">Filtreleri sıfırlayarak veya farklı kelimelerle arama yapmayı deneyebilirsiniz.</p>
+                        <button 
+                          onClick={() => {
+                            setProductSearchQuery('');
+                            setProductFilterCategory('');
+                            setProductFilterType('');
+                            setProductSortBy('newest');
+                          }} 
+                          className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-colors"
+                        >
+                          Filtreleri Sıfırla
+                        </button>
                       </div>
                     )}
                   </div>
