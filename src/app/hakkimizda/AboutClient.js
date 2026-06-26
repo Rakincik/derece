@@ -18,6 +18,7 @@ export default function AboutClient({ settings }) {
   const visionTitle = settings?.about_vision_title || 'Vizyonumuz';
   const visionText = settings?.about_vision_text || "Türkiye'nin dijital eğitim alanında en çok tercih edilen ve en yenilikçi platformu olmak. Eğitimde fırsat eşitliği yaratarak, kaliteli içeriği yurdun dört bir yanındaki öğrencilere ulaştırmak.";
   const aboutImg = settings?.about_image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop';
+  const isDefaultImage = aboutImg.includes('unsplash.com');
 
   const renderTitle = (text) => {
     const parts = text.split('**');
@@ -111,13 +112,17 @@ export default function AboutClient({ settings }) {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative aspect-square md:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl"
+            className={`relative aspect-square md:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl ${
+              isDefaultImage ? '' : 'bg-slate-50 border border-slate-100 flex items-center justify-center p-6'
+            }`}
           >
-            <div className="absolute inset-0 bg-gradient-to-tr from-accent-600/20 to-blue-600/20 mix-blend-multiply z-10" />
+            {isDefaultImage && (
+              <div className="absolute inset-0 bg-gradient-to-tr from-accent-600/20 to-blue-600/20 mix-blend-multiply z-10" />
+            )}
             <img 
               src={aboutImg} 
               alt="Hakkımızda Görseli" 
-              className="w-full h-full object-cover"
+              className={`w-full h-full ${isDefaultImage ? 'object-cover' : 'object-contain'}`}
             />
           </motion.div>
         </div>
