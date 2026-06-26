@@ -171,13 +171,21 @@ export default function AdminDashboard() {
   const [isUploadingAbout, setIsUploadingAbout] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
+  // Student detail view state
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [modalGrantProductId, setModalGrantProductId] = useState('');
+  const [modalGrantAmount, setModalGrantAmount] = useState('');
+  const [modalIsSubmitting, setModalIsSubmitting] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [modalSuccess, setModalSuccess] = useState('');
+
   useEffect(() => {
     fetchData();
     fetchCurrentAdmin();
   }, []);
 
   useEffect(() => {
-    if (isModalOpen || isCouponModalOpen || isMobileSidebarOpen || isCategoryModalOpen || isTestimonialModalOpen) {
+    if (isModalOpen || isCouponModalOpen || isMobileSidebarOpen || isCategoryModalOpen || isTestimonialModalOpen || selectedUser) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -185,7 +193,7 @@ export default function AdminDashboard() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isModalOpen, isCouponModalOpen, isMobileSidebarOpen, isCategoryModalOpen, isTestimonialModalOpen]);
+  }, [isModalOpen, isCouponModalOpen, isMobileSidebarOpen, isCategoryModalOpen, isTestimonialModalOpen, selectedUser]);
 
   const fetchCurrentAdmin = async () => {
     try {
@@ -1755,10 +1763,20 @@ export default function AdminDashboard() {
                                 item.district?.toLowerCase().includes(query)
                               );
                             }).map((item) => (
-                              <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
-                                <td className="py-4 px-6 font-bold text-slate-800">{item.name || 'Girilmemiş'}</td>
-                                <td className="py-4 px-6 text-slate-600 font-medium">{item.email}</td>
-                                <td className="py-4 px-6 text-slate-650 font-semibold">{item.phone || '-'}</td>
+                              <tr 
+                                key={item.id} 
+                                onClick={() => setSelectedUser(item)}
+                                className="border-b border-slate-100 hover:bg-slate-50 transition-colors text-sm cursor-pointer"
+                                title="Öğrenci Detaylarını Göster"
+                              >
+                                <td className="py-4 px-6 font-bold text-slate-800 flex items-center gap-2 hover:text-amber-500 transition-colors">
+                                  <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-650 font-bold shrink-0">
+                                    {item.name?.substring(0, 2).toUpperCase() || 'ÖG'}
+                                  </div>
+                                  <span>{item.name || 'Girilmemiş'}</span>
+                                </td>
+                                <td className="py-4 px-6 text-slate-600 font-medium select-all" onClick={(e) => e.stopPropagation()}>{item.email}</td>
+                                <td className="py-4 px-6 text-slate-650 font-semibold select-all" onClick={(e) => e.stopPropagation()}>{item.phone || '-'}</td>
                                 <td className="py-4 px-6 text-slate-550 font-medium">
                                   {item.city ? `${item.district ? item.district + ', ' : ''}${item.city}` : '-'}
                                 </td>
@@ -1768,15 +1786,15 @@ export default function AdminDashboard() {
                                 <td className="py-4 px-6">
                                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
                                     item.role === 'ADMIN' 
-                                      ? 'bg-red-50 text-red-600 border-red-100' 
-                                      : 'bg-blue-50 text-blue-600 border-blue-100'
+                                      ? 'bg-red-50 text-red-650 border-red-100' 
+                                      : 'bg-blue-50 text-blue-650 border-blue-100'
                                   }`}>
                                     {item.role === 'ADMIN' ? 'YÖNETİCİ' : 'ÖĞRENCİ'}
                                   </span>
                                 </td>
                                 <td className="py-4 px-6 text-slate-850 font-bold">{item._count?.orders || 0}</td>
                                 <td className="py-4 px-6 text-right">
-                                  <div className="flex justify-end gap-2">
+                                  <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                     <button
                                       onClick={() => handleToggleUserRole(item.id, item.role)}
                                       disabled={item.id === currentAdminId}
@@ -3998,6 +4016,268 @@ export default function AdminDashboard() {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* Öğrenci Detay Modalı */}
+      <AnimatePresence>
+        {selectedUser && (() => {
+          // Reactivity: update detail data if list changes
+          const userDetail = users.find(u => u.id === selectedUser.id) || selectedUser;
+          // Filter student orders
+          const userOrders = orders.filter(o => o.userId === userDetail.id);
+          // Calculate total spending
+          const totalSpent = userOrders
+            .filter(o => o.paymentStatus === 'SUCCESS')
+            .reduce((sum, o) => sum + (o.amount || 0), 0);
+
+          // Handle manual course grant from modal
+          const handleModalGrantAccess = async (e) => {
+            e.preventDefault();
+            if (!modalGrantProductId) {
+              setModalError('Lütfen bir eğitim seçin.');
+              return;
+            }
+            setModalIsSubmitting(true);
+            setModalError('');
+            setModalSuccess('');
+            try {
+              const selectedProduct = products.find(p => p.id === modalGrantProductId);
+              const res = await fetch('/api/admin/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: userDetail.email,
+                  productId: modalGrantProductId,
+                  amount: modalGrantAmount ? parseFloat(modalGrantAmount) : selectedProduct?.price
+                })
+              });
+              const data = await res.json();
+              if (res.ok) {
+                setModalSuccess('Eğitim erişimi başarıyla tanımlandı!');
+                setModalGrantProductId('');
+                setModalGrantAmount('');
+                fetchData(); // Refresh global data
+              } else {
+                setModalError(data.error || 'Erişim tanımlanırken hata oluştu.');
+              }
+            } catch (err) {
+              setModalError('Bağlantı hatası oluştu.');
+            } finally {
+              setModalIsSubmitting(false);
+            }
+          };
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col md:flex-row my-8"
+              >
+                {/* Sol Panel: Profil ve Özet Bilgiler */}
+                <div className="md:w-1/3 bg-slate-50 border-r border-slate-100 p-6 flex flex-col justify-between">
+                  <div>
+                    {/* Header: Kapat butonu ve profil resmi */}
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-amber-500/20">
+                        {userDetail.name?.substring(0, 2).toUpperCase() || 'ÖG'}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedUser(null);
+                          setModalError('');
+                          setModalSuccess('');
+                          setModalGrantProductId('');
+                          setModalGrantAmount('');
+                        }}
+                        className="p-2 bg-white hover:bg-slate-100 border border-slate-200/60 text-slate-400 hover:text-slate-700 rounded-xl transition-all"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <h3 className="text-xl font-black text-slate-800 mb-1">{userDetail.name || 'Girilmemiş'}</h3>
+                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border tracking-wide uppercase inline-block mb-6 ${
+                      userDetail.role === 'ADMIN' 
+                        ? 'bg-red-55 text-red-650 border-red-100' 
+                        : 'bg-amber-50 text-amber-700 border-amber-100'
+                    }`}>
+                      {userDetail.role === 'ADMIN' ? 'YÖNETİCİ' : 'ÖĞRENCİ'}
+                    </span>
+
+                    {/* Bilgiler Listesi */}
+                    <div className="space-y-4">
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">E-Posta Adresi</span>
+                        <span className="text-sm font-semibold text-slate-700 break-all select-all">{userDetail.email}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Telefon Numarası</span>
+                        <span className="text-sm font-semibold text-slate-700 select-all">{userDetail.phone || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Konum</span>
+                        <span className="text-sm font-semibold text-slate-700">
+                          {userDetail.city ? `${userDetail.district ? userDetail.district + ', ' : ''}${userDetail.city}` : '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kayıt Tarihi</span>
+                        <span className="text-sm font-semibold text-slate-700">
+                          {new Date(userDetail.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Özet Kartları */}
+                  <div className="grid grid-cols-2 gap-3 mt-8 pt-6 border-t border-slate-200/60">
+                    <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Eğitim Sayısı</span>
+                      <span className="text-xl font-black text-slate-800">{userDetail._count?.orders || 0}</span>
+                    </div>
+                    <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Toplam Harcama</span>
+                      <span className="text-xl font-black text-emerald-600">
+                        {totalSpent.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sağ Panel: Sipariş Geçmişi & Erişim Ekleme */}
+                <div className="flex-1 p-6 flex flex-col justify-between max-h-[85vh] md:max-h-[650px] overflow-y-auto">
+                  <div>
+                    <h4 className="text-base font-black text-slate-800 mb-4 flex items-center gap-2">
+                      <ShoppingBag className="w-5 h-5 text-amber-500" />
+                      Satın Aldığı Eğitimler & Sipariş Geçmişi
+                    </h4>
+
+                    {userOrders.length > 0 ? (
+                      <div className="border border-slate-150 rounded-2xl overflow-hidden mb-6 max-h-[220px] overflow-y-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-150 font-bold text-slate-500 text-[10px] uppercase">
+                              <th className="py-2.5 px-4">Sipariş ID</th>
+                              <th className="py-2.5 px-4">Eğitim</th>
+                              <th className="py-2.5 px-4">Tutar</th>
+                              <th className="py-2.5 px-4">Tarih</th>
+                              <th className="py-2.5 px-4 text-right">Durum</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {userOrders.map((order) => (
+                              <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                                <td className="py-2.5 px-4 font-mono font-medium text-slate-400 select-all">#{order.id.slice(-6).toUpperCase()}</td>
+                                <td className="py-2.5 px-4 font-bold text-slate-700">{order.product?.title || 'Bilinmeyen Ürün'}</td>
+                                <td className="py-2.5 px-4 font-semibold text-slate-600">
+                                  {order.amount ? order.amount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }) : '-'}
+                                </td>
+                                <td className="py-2.5 px-4 text-slate-500">
+                                  {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                                </td>
+                                <td className="py-2.5 px-4 text-right">
+                                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                                    order.paymentStatus === 'SUCCESS' 
+                                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                                      : order.paymentStatus === 'WAITING' 
+                                      ? 'bg-amber-50 text-amber-600 border-amber-100'
+                                      : 'bg-red-50 text-red-650 border-red-100'
+                                  }`}>
+                                    {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : order.paymentStatus === 'WAITING' ? 'BEKLEMEDE' : 'İPTAL'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="p-8 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400 font-medium mb-6">
+                        Bu öğrenciye ait herhangi bir eğitim siparişi bulunmuyor.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Manuel Eğitim Erişim Formu */}
+                  <div className="border-t border-slate-155 pt-6 mt-auto">
+                    <h5 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-1.5">
+                      <PlusCircle className="w-4.5 h-4.5 text-amber-500" />
+                      Manuel Eğitim / Erişim Tanımla
+                    </h5>
+
+                    {modalError && (
+                      <div className="p-3 bg-red-50 border border-red-100 text-red-650 rounded-xl text-xs font-semibold flex items-center gap-2 mb-4">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{modalError}</span>
+                      </div>
+                    )}
+
+                    {modalSuccess && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-650 rounded-xl text-xs font-semibold flex items-center gap-2 mb-4 animate-fade-in">
+                        <Check className="w-4 h-4 shrink-0" />
+                        <span>{modalSuccess}</span>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleModalGrantAccess} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 pl-0.5">Eğitim Paketi</label>
+                          <select
+                            value={modalGrantProductId}
+                            onChange={(e) => setModalGrantProductId(e.target.value)}
+                            required
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-xs font-bold"
+                          >
+                            <option value="">Eğitim seçin...</option>
+                            {products
+                              .filter(p => !userOrders.some(o => o.productId === p.id && o.paymentStatus === 'SUCCESS'))
+                              .map(p => (
+                                <option key={p.id} value={p.id}>
+                                  {p.title} ({p.price?.toLocaleString('tr-TR')} TL)
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 pl-0.5">İndirimli Tutar (Boş ise tam fiyat)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="Örn: 2500"
+                            value={modalGrantAmount}
+                            onChange={(e) => setModalGrantAmount(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={modalIsSubmitting}
+                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-black tracking-wider uppercase transition-all shadow-md shadow-amber-500/10 flex items-center justify-center gap-1.5"
+                      >
+                        {modalIsSubmitting ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            İşlem Yapılıyor...
+                          </>
+                        ) : (
+                          <>
+                            <Key className="w-4 h-4" />
+                            Eğitim Tanımla / Yetkilendir
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </div>
   );
