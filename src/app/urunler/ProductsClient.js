@@ -121,7 +121,7 @@ export default function ProductsClient({ initialProducts }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
           <div className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 glass-card p-5">
+            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto glass-card p-5 pr-4">
               <FilterSidebar
                 products={products}
                 selectedCategory={selectedCategory}

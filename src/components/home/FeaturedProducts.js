@@ -115,7 +115,7 @@ export default function FeaturedProducts({ initialProducts }) {
         <div className="flex gap-8">
           {/* Desktop Sidebar */}
           <div className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 glass-card p-5">
+            <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto glass-card p-5 pr-4">
               <FilterSidebar
                 products={products}
                 selectedCategory={selectedCategory}
