@@ -54,7 +54,8 @@ export async function PUT(request, { params }) {
       title, price, discountedPrice, isFeatured, isBestseller, type, coverImage, description, contents, outcomes,
       pages, videoCount, duration, examCount,
       showDemo, demoUrl, showFaq, faqs, showOutcomes, categoryId,
-      showInstructor, instructorName, instructorExperience, instructorDescription, instructorAvatar, instructorImage
+      showInstructor, instructorName, instructorExperience, instructorDescription, instructorAvatar, instructorImage,
+      sortOrder
     } = body;
 
     // Check if product exists
@@ -110,6 +111,7 @@ export async function PUT(request, { params }) {
     if (instructorDescription !== undefined) updateData.instructorDescription = instructorDescription || "";
     if (instructorAvatar !== undefined) updateData.instructorAvatar = instructorAvatar || "E";
     if (instructorImage !== undefined) updateData.instructorImage = instructorImage || null;
+    if (sortOrder !== undefined) updateData.sortOrder = sortOrder !== '' && sortOrder !== null ? parseInt(sortOrder) : 0;
 
     if (categoryId !== undefined) {
       updateData.categoryId = categoryId || null;

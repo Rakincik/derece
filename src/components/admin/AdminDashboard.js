@@ -85,6 +85,7 @@ export default function AdminDashboard() {
   const [videoCount, setVideoCount] = useState('');
   const [duration, setDuration] = useState('');
   const [examCount, setExamCount] = useState('');
+  const [sortOrder, setSortOrder] = useState('0');
   const [showDemo, setShowDemo] = useState(true);
   const [demoUrl, setDemoUrl] = useState('');
   const [showFaq, setShowFaq] = useState(true);
@@ -635,6 +636,7 @@ export default function AdminDashboard() {
     setVideoCount('');
     setDuration('');
     setExamCount('');
+    setSortOrder('0');
     setShowDemo(true);
     setDemoUrl('');
     setShowFaq(true);
@@ -665,6 +667,7 @@ export default function AdminDashboard() {
     setVideoCount(product.videoCount !== null && product.videoCount !== undefined ? product.videoCount.toString() : '');
     setDuration(product.duration !== null && product.duration !== undefined ? product.duration : '');
     setExamCount(product.examCount !== null && product.examCount !== undefined ? product.examCount.toString() : '');
+    setSortOrder(product.sortOrder !== null && product.sortOrder !== undefined ? product.sortOrder.toString() : '0');
     setShowDemo(product.showDemo !== false);
     setDemoUrl(product.demoUrl || '');
     setShowFaq(product.showFaq !== false);
@@ -711,7 +714,8 @@ export default function AdminDashboard() {
       instructorDescription,
       instructorAvatar,
       instructorImage,
-      categoryId: categoryId || null
+      categoryId: categoryId || null,
+      sortOrder: sortOrder ? parseInt(sortOrder) : 0
     };
 
     try {
@@ -3805,7 +3809,7 @@ export default function AdminDashboard() {
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Fiyatlandırma & Satış Seçenekleri</h4>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Fiyat</label>
                       <div className="relative">
@@ -3833,6 +3837,17 @@ export default function AdminDashboard() {
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₺</span>
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Sıralama (Sıra No)</label>
+                      <input 
+                        type="number" 
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value)}
+                        placeholder="Örn: 1"
+                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
+                      />
                     </div>
                   </div>
 

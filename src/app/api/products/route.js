@@ -8,7 +8,10 @@ export async function GET() {
   try {
     const dbProducts = await prisma.product.findMany({
       include: { category: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ],
     });
 
     const products = dbProducts.map(mapProduct);

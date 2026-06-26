@@ -52,7 +52,10 @@ export async function GET(request) {
 
     const products = await prisma.product.findMany({
       include: { category: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ],
     });
 
     return NextResponse.json({ products });
@@ -78,7 +81,8 @@ export async function POST(request) {
       pages, videoCount, duration, examCount,
       showDemo, demoUrl, showFaq, faqs,
       showOutcomes, categoryId,
-      showInstructor, instructorName, instructorExperience, instructorDescription, instructorAvatar, instructorImage
+      showInstructor, instructorName, instructorExperience, instructorDescription, instructorAvatar, instructorImage,
+      sortOrder
     } = body;
 
     // Validation
@@ -143,6 +147,7 @@ export async function POST(request) {
         instructorAvatar: instructorAvatar !== undefined && instructorAvatar !== null && instructorAvatar !== '' ? instructorAvatar : "E",
         instructorImage: instructorImage || null,
         categoryId: categoryId || null,
+        sortOrder: sortOrder !== undefined && sortOrder !== '' && sortOrder !== null ? parseInt(sortOrder) : 0,
       },
     });
 

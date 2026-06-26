@@ -10,7 +10,10 @@ async function ProductsListLoader() {
   try {
     const dbProducts = await prisma.product.findMany({
       include: { category: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ]
     });
     initialProducts = dbProducts.map(mapProduct);
   } catch (err) {

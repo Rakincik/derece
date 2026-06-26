@@ -51,6 +51,7 @@ model Product {
   instructorImage       String?
   categoryId      String?
   category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sortOrder       Int      @default(0)
   createdAt       DateTime @default(now())
   orders          Order[]
 }
