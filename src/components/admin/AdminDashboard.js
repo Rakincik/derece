@@ -24,6 +24,40 @@ export default function AdminDashboard() {
   // Navigation
   const [activeSection, setActiveSection] = useState('products'); // products, orders, users, coupons, messages, grant
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Custom Confirmation Modal State
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    resolveRef: null,
+    type: 'warning' // 'warning' or 'danger'
+  });
+
+  const showConfirm = (message, title = 'Onay Gerekli', type = 'warning') => {
+    return new Promise((resolve) => {
+      setConfirmDialog({
+        isOpen: true,
+        title,
+        message,
+        resolveRef: resolve,
+        type
+      });
+    });
+  };
+
+  const handleConfirmClose = (result) => {
+    if (confirmDialog.resolveRef) {
+      confirmDialog.resolveRef(result);
+    }
+    setConfirmDialog({
+      isOpen: false,
+      title: '',
+      message: '',
+      resolveRef: null,
+      type: 'warning'
+    });
+  };
   
   // Feedback states
   const [isLoading, setIsLoading] = useState(true);
@@ -230,7 +264,7 @@ export default function AdminDashboard() {
   }, [error]);
 
   useEffect(() => {
-    if (isModalOpen || isCouponModalOpen || isMobileSidebarOpen || isCategoryModalOpen || isTestimonialModalOpen || selectedUser || isUserModalOpen) {
+    if (isModalOpen || isCouponModalOpen || isMobileSidebarOpen || isCategoryModalOpen || isTestimonialModalOpen || selectedUser || isUserModalOpen || confirmDialog.isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -238,7 +272,7 @@ export default function AdminDashboard() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isModalOpen, isCouponModalOpen, isMobileSidebarOpen, isCategoryModalOpen, isTestimonialModalOpen, selectedUser, isUserModalOpen]);
+  }, [isModalOpen, isCouponModalOpen, isMobileSidebarOpen, isCategoryModalOpen, isTestimonialModalOpen, selectedUser, isUserModalOpen, confirmDialog.isOpen]);
 
   const fetchCurrentAdmin = async () => {
     try {
@@ -666,7 +700,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteProduct = async (id) => {
-    if (!confirm('Bu ürünü kalıcı olarak silmek istediğinize emin misiniz?')) return;
+    if (!(await showConfirm('Bu ürünü kalıcı olarak silmek istediğinize emin misiniz?', 'Ürünü Sil', 'danger'))) return;
     setError('');
     setSuccess('');
 
@@ -729,7 +763,8 @@ export default function AdminDashboard() {
     }
 
     const nextRole = currentRole === 'ADMIN' ? 'STUDENT' : 'ADMIN';
-    if (!confirm(`Kullanıcı rolünü "${nextRole}" olarak değiştirmek istediğinize emin misiniz?`)) return;
+    const nextRoleText = nextRole === 'STUDENT' ? 'Öğrenci' : 'Yönetici (Admin)';
+    if (!(await showConfirm(`Kullanıcı rolünü "${nextRoleText}" olarak değiştirmek istediğinize emin misiniz?`, 'Rol Değiştirme', 'warning'))) return;
     setError('');
     setSuccess('');
 
@@ -759,7 +794,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    if (!confirm('Bu kullanıcıyı ve tüm sipariş geçmişini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return;
+    if (!(await showConfirm('Bu kullanıcıyı ve tüm sipariş geçmişini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!', 'Kullanıcıyı Sil', 'danger'))) return;
     setError('');
     setSuccess('');
 
@@ -852,7 +887,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCoupon = async (couponId) => {
-    if (!confirm('Bu kupon kodunu silmek istediğinize emin misiniz?')) return;
+    if (!(await showConfirm('Bu kupon kodunu silmek istediğinize emin misiniz?', 'Kuponu Sil', 'danger'))) return;
     setError('');
     setSuccess('');
 
@@ -935,7 +970,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCategory = async (catId) => {
-    if (!confirm('Bu kategoriyi silmek istediğinize emin misiniz? Bu kategoriye bağlı ürünlerin kategorisi sıfırlanacaktır.')) return;
+    if (!(await showConfirm('Bu kategoriyi silmek istediğinize emin misiniz? Bu kategoriye bağlı ürünlerin kategorisi sıfırlanacaktır.', 'Kategoriyi Sil', 'danger'))) return;
     setError('');
     setSuccess('');
 
@@ -1026,7 +1061,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteMessage = async (msgId) => {
-    if (!confirm('Bu mesajı silmek istediğinize emin misiniz?')) return;
+    if (!(await showConfirm('Bu mesajı silmek istediğinize emin misiniz?', 'Mesajı Sil', 'danger'))) return;
     setError('');
     setSuccess('');
 
@@ -1267,7 +1302,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteTestimonial = async (testimonialId) => {
-    if (!confirm('Bu öğrenci yorumunu silmek istediğinize emin misiniz?')) return;
+    if (!(await showConfirm('Bu öğrenci yorumunu silmek istediğinize emin misiniz?', 'Yorumu Sil', 'danger'))) return;
     setError('');
     setSuccess('');
     setIsLoading(true);
@@ -5041,6 +5076,55 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modern Confirmation Dialog */}
+      <AnimatePresence>
+        {confirmDialog.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl p-6 flex flex-col items-center text-center space-y-4"
+            >
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${confirmDialog.type === 'danger' ? 'bg-rose-50 text-rose-500' : 'bg-amber-50 text-amber-500'}`}>
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900 font-sans">
+                  {confirmDialog.title}
+                </h3>
+                <p className="text-sm font-semibold text-slate-500 leading-relaxed max-w-sm">
+                  {confirmDialog.message}
+                </p>
+              </div>
+
+              <div className="flex w-full gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleConfirmClose(false)}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleConfirmClose(true)}
+                  className={`flex-1 py-3 text-white rounded-2xl text-xs font-bold transition-all shadow-md ${
+                    confirmDialog.type === 'danger'
+                      ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/10'
+                      : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/10'
+                  }`}
+                >
+                  Onayla
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
