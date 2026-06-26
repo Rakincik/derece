@@ -193,6 +193,24 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
     if (isModalOpen || isCouponModalOpen || isMobileSidebarOpen || isCategoryModalOpen || isTestimonialModalOpen || selectedUser) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -992,7 +1010,7 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        setSuccess('Ana sayfa ayarları başarıyla kaydedildi.');
+        setSuccess('Değişiklikleriniz başarıyla kaydedildi.');
         fetchData();
       } else {
         const data = await res.json();
@@ -1005,9 +1023,11 @@ export default function AdminDashboard() {
     }
   };
 
-  // Asynchronously toggle testimonials section visibility in database (instant save since testimonials is not a form)
-  const handleToggleTestimonialsVisibility = async (checked) => {
-    setShowTestimonials(checked);
+  // Save testimonials section visibility in database and show success message
+  const handleSaveTestimonialsVisibility = async () => {
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
     try {
       const statsArray = [
         { label: stat1Label, value: parseInt(stat1Value) || 0, suffix: stat1Suffix },
@@ -1053,17 +1073,25 @@ export default function AdminDashboard() {
           show_campaign: showCampaign.toString(),
           show_stats: showStats.toString(),
           show_about: showAbout.toString(),
-          show_testimonials: checked.toString()
+          show_testimonials: showTestimonials.toString()
         }
       };
-      await fetch('/api/admin/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      fetchData();
+      if (res.ok) {
+        setSuccess('Değişiklikleriniz başarıyla kaydedildi.');
+        fetchData();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Ayarlar kaydedilemedi.');
+      }
     } catch (err) {
-      console.error('Testimonials visibility toggle error:', err);
+      setError('Bağlantı hatası.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -2903,22 +2931,36 @@ export default function AdminDashboard() {
                             
                             /* Testimonials Panel */
                             <div className="space-y-6">
-                              {/* Bölüm Görünürlük Kontrolü (Anlık Kaydeder) */}
+                              {/* Bölüm Görünürlük Kontrolü */}
                               <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm flex justify-between items-center flex-wrap gap-4">
                                 <div>
                                   <h3 className="text-sm font-bold text-slate-900">Yorumlar Bölümü Görünürlüğü</h3>
                                   <p className="text-xs text-slate-400 font-semibold">Ana sayfanın altındaki öğrenci yorumları bölümünü açın veya kapatın.</p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer select-none">
-                                  <input
-                                    type="checkbox"
-                                    checked={showTestimonials}
-                                    onChange={(e) => handleToggleTestimonialsVisibility(e.target.checked)}
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                                  <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showTestimonials ? 'AÇIK' : 'KAPALI'}</span>
-                                </label>
+                                <div className="flex items-center gap-4">
+                                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={showTestimonials}
+                                      onChange={(e) => setShowTestimonials(e.target.checked)}
+                                      className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                    <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showTestimonials ? 'AÇIK' : 'KAPALI'}</span>
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={handleSaveTestimonialsVisibility}
+                                    className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center gap-1.5"
+                                  >
+                                    {isLoading ? (
+                                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <Check className="w-3.5 h-3.5" />
+                                    )}
+                                    <span>Ayarları Kaydet</span>
+                                  </button>
+                                </div>
                               </div>
 
                               <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
