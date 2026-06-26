@@ -186,8 +186,8 @@ export default function ProductsClient({ initialProducts }) {
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div key={n} className="glass-card overflow-hidden h-[420px] animate-pulse flex flex-col">
-                    <div className="bg-slate-850 aspect-[4/3] w-full" />
+                  <div key={n} className="glass-card overflow-hidden h-full animate-pulse flex flex-col">
+                    <div className="bg-slate-850 aspect-[5/7] w-full" />
                     <div className="p-4 flex-1 space-y-3 flex flex-col justify-between">
                       <div className="space-y-2">
                         <div className="h-4 bg-slate-800 rounded-md w-1/4" />

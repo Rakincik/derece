@@ -2,9 +2,8 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { ShoppingCart, Heart, Share2, CheckCircle2, Download, Play, FileCheck, Users, Clock } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, CheckCircle2, Download, Play, FileCheck, Clock } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
-import StarRating from '@/components/ui/StarRating';
 import Button from '@/components/ui/Button';
 import useCartStore from '@/store/cartStore';
 import { formatPrice } from '@/lib/productHelper';
@@ -40,25 +39,15 @@ export default function ProductInfo({ product }) {
         {product.name}
       </h1>
 
-      {/* Rating & Sales */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <StarRating
-          rating={product.rating}
-          size="md"
-          showCount
-          count={product.reviewCount}
-        />
-        <span className="flex items-center gap-1 text-xs text-slate-500">
-          <Users className="w-3.5 h-3.5" strokeWidth={1.5} />
-          {product.salesCount.toLocaleString('tr-TR')} satış
-        </span>
-        {product.duration && (
+      {/* Duration */}
+      {product.duration && (
+        <div className="flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1 text-xs text-slate-500">
             <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
             {product.duration}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Description */}
       <p className="text-slate-600 leading-relaxed">

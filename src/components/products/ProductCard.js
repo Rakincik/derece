@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Eye, TrendingUp } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
-import StarRating from '@/components/ui/StarRating';
 import useCartStore from '@/store/cartStore';
 import { formatPrice } from '@/lib/productHelper';
 
@@ -31,7 +30,7 @@ export default function ProductCard({ product }) {
         className="glass-card overflow-hidden group cursor-pointer h-full flex flex-col"
       >
         {/* Image Container */}
-        <div className="relative aspect-[16/10] overflow-hidden">
+        <div className="relative aspect-[5/7] overflow-hidden bg-slate-50 border-b border-slate-100">
           <Image
             src={product.cover}
             alt={product.name}
@@ -84,24 +83,14 @@ export default function ProductCard({ product }) {
           </Badge>
 
           {/* Name */}
-          <h3 className="font-semibold text-slate-900 text-sm mb-1.5 group-hover:text-accent-600 transition-colors line-clamp-2">
+          <h3 className="font-semibold text-slate-950 text-[15px] sm:text-base mb-1.5 group-hover:text-accent-600 transition-colors line-clamp-2 leading-snug">
             {product.name}
           </h3>
 
           {/* Short Description */}
-          <p className="text-xs text-slate-600 mb-3 line-clamp-2 flex-1">
+          <p className="text-[13px] text-slate-700 mb-3.5 line-clamp-2 flex-1 leading-relaxed">
             {product.shortDescription}
           </p>
-
-          {/* Rating */}
-          <div className="mb-3">
-            <StarRating
-              rating={product.rating}
-              size="xs"
-              showCount
-              count={product.reviewCount}
-            />
-          </div>
 
           {/* Price & CTA */}
           <div className="flex items-center justify-between pt-3 border-t border-slate-200">

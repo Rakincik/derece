@@ -152,8 +152,8 @@ export default function FeaturedProducts({ initialProducts }) {
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-4 gap-5">
                 {[1, 2, 3, 4].map((n) => (
-                  <div key={n} className="glass-card overflow-hidden h-[400px] animate-pulse flex flex-col">
-                    <div className="bg-slate-200 aspect-[16/10]" />
+                  <div key={n} className="glass-card overflow-hidden h-full animate-pulse flex flex-col">
+                    <div className="bg-slate-200 aspect-[5/7]" />
                     <div className="p-4 flex-1 space-y-3 flex flex-col justify-between">
                       <div className="space-y-2">
                         <div className="h-4 bg-slate-200 rounded-md w-1/3" />

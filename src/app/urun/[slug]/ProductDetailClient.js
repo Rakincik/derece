@@ -34,8 +34,8 @@ export default function ProductDetailClient({ product }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="glass-card overflow-hidden">
-              <div className="relative aspect-[4/3]">
+            <div className="glass-card overflow-hidden max-w-md mx-auto">
+              <div className="relative aspect-[5/7]">
                 <Image
                   src={product.cover}
                   alt={product.name}

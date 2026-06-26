@@ -1828,7 +1828,7 @@ export default function AdminDashboard() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                           {filteredProducts.map((product) => (
                             <div key={product.id} className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden flex flex-col hover:shadow-lg hover:border-slate-350 transition-all">
-                              <div className="relative aspect-[16/10] bg-slate-100 flex items-center justify-center border-b border-slate-100">
+                              <div className="relative aspect-[5/7] bg-slate-100 flex items-center justify-center border-b border-slate-100">
                                 <img 
                                   src={product.coverImage || '/covers/kombo.png'} 
                                   alt={product.title} 
@@ -1898,7 +1898,7 @@ export default function AdminDashboard() {
                                   return (
                                     <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
                                       <td className="py-3 px-3">
-                                        <div className="w-12 aspect-[16/10] rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shadow-sm">
+                                        <div className="w-12 aspect-[5/7] rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shadow-sm">
                                           <img src={product.coverImage || '/covers/kombo.png'} alt={product.title} className="w-full h-full object-cover" />
                                         </div>
                                       </td>
@@ -3906,7 +3906,7 @@ export default function AdminDashboard() {
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 bg-slate-50/50 border border-slate-200/60 p-4 rounded-3xl">
                     {/* Live Preview Card */}
-                    <div className="relative aspect-[16/10] w-32 shrink-0 bg-slate-100 border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex items-center justify-center">
+                    <div className="relative aspect-[5/7] w-32 shrink-0 bg-slate-100 border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex items-center justify-center">
                       {coverImage ? (
                         <img 
                           src={coverImage} 
@@ -3921,7 +3921,7 @@ export default function AdminDashboard() {
                     <div className="flex-1 w-full space-y-2.5">
                       <div className="flex items-center justify-between pl-1">
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">Görsel Dosya Yolu / Dosya Yükle</label>
-                        <span className="text-[10px] text-amber-605 font-bold uppercase tracking-wider">Önerilen: 800x500 px (16:10)</span>
+                        <span className="text-[10px] text-amber-605 font-bold uppercase tracking-wider">Önerilen: 600x840 px (5:7)</span>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3">
                         <input 
