@@ -43,7 +43,7 @@ export default function AdminDashboard() {
   const [type, setType] = useState('Video Ders Seti');
   const [coverImage, setCoverImage] = useState('');
   const [description, setDescription] = useState('');
-  const [contentsInput, setContentsInput] = useState('');
+  const [contents, setContents] = useState([]);
   const [outcomesInput, setOutcomesInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [pages, setPages] = useState('');
@@ -418,7 +418,7 @@ export default function AdminDashboard() {
     setCategoryId(categoriesList[0]?.id || '');
     setCoverImage('/covers/kombo.png');
     setDescription('');
-    setContentsInput('');
+    setContents([]);
     setOutcomesInput('');
     setPages('');
     setVideoCount('');
@@ -448,7 +448,7 @@ export default function AdminDashboard() {
     setType(product.type);
     setCoverImage(product.coverImage);
     setDescription(product.description);
-    setContentsInput(product.contents ? product.contents.join(', ') : '');
+    setContents(product.contents || []);
     setOutcomesInput(product.outcomes ? product.outcomes.join(', ') : '');
     setPages(product.pages !== null && product.pages !== undefined ? product.pages.toString() : '');
     setVideoCount(product.videoCount !== null && product.videoCount !== undefined ? product.videoCount.toString() : '');
@@ -483,7 +483,7 @@ export default function AdminDashboard() {
       type,
       coverImage,
       description,
-      contents: contentsInput.split(',').map(s => s.trim()).filter(Boolean),
+      contents: contents.map(s => s.trim()).filter(Boolean),
       outcomes: outcomesInput.split(',').map(s => s.trim()).filter(Boolean),
       pages: pages ? parseInt(pages) : null,
       videoCount: videoCount ? parseInt(videoCount) : null,
@@ -3244,17 +3244,56 @@ export default function AdminDashboard() {
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center justify-between mb-2">
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider pl-1">İçindekiler</label>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Virgülle ayırarak yazın</span>
+                        <button
+                          type="button"
+                          onClick={() => setContents([...contents, ''])}
+                          className="px-2.5 py-1 text-[10px] font-black tracking-wider uppercase bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors flex items-center gap-1 shadow-sm"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5" />
+                          Öğe Ekle
+                        </button>
                       </div>
-                      <input 
-                        type="text" 
-                        value={contentsInput}
-                        onChange={(e) => setContentsInput(e.target.value)}
-                        placeholder="Örn: Limit Tanımı, Süreklilik Kuralları, Türev Mantığı"
-                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-medium shadow-sm"
-                      />
+                      
+                      {contents.length > 0 ? (
+                        <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 border border-slate-100 p-2.5 rounded-2xl bg-slate-50/50">
+                          {contents.map((item, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-slate-400 w-5 text-right shrink-0">
+                                {(index + 1).toString().padStart(2, '0')}
+                              </span>
+                              <input 
+                                type="text" 
+                                required
+                                value={item}
+                                onChange={(e) => {
+                                  const newContents = [...contents];
+                                  newContents[index] = e.target.value;
+                                  setContents(newContents);
+                                }}
+                                placeholder="Örn: 📚 Matematik Konu Anlatımı Kitabı (456 sayfa)"
+                                className="flex-1 px-3 py-2 bg-white border border-slate-200 focus:border-amber-500 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none transition-all text-xs font-semibold shadow-sm"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newContents = contents.filter((_, i) => i !== index);
+                                  setContents(newContents);
+                                }}
+                                className="p-2 bg-red-50 hover:bg-red-100 border border-red-100 text-red-500 rounded-xl transition-all shrink-0"
+                                title="Müfredat Öğesini Sil"
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-6 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs font-medium bg-slate-50/30">
+                          Henüz hiçbir içerik eklenmedi. "Öğe Ekle" butonuna basarak başlayın.
+                        </div>
+                      )}
                     </div>
 
                     <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
