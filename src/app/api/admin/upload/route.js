@@ -52,6 +52,16 @@ export async function POST(request) {
     // Web sunucusunun okuyabilmesi için izinleri 644 (okunabilir) yapıyoruz
     await chmod(filePath, 0o644);
 
+    // Linux'ta dosya sahipliğini web sitesi kullanıcısı ile senkronize ediyoruz
+    if (process.platform !== 'win32') {
+      try {
+        const parentStat = await require('fs/promises').stat('/home/dereceuzem.com/public_html');
+        await require('fs/promises').chown(filePath, parentStat.uid, parentStat.gid);
+      } catch (e) {
+        console.error('Dosya sahibi değiştirilemedi:', e);
+      }
+    }
+
     // Sitenin erişebileceği public url
     const fileUrl = `/uploads/${filename}`;
 
