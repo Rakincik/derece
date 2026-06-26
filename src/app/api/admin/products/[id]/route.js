@@ -164,6 +164,11 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Ürün bulunamadı.' }, { status: 404 });
     }
 
+    // Delete associated orders first to avoid foreign key constraint errors
+    await prisma.order.deleteMany({
+      where: { productId: id },
+    });
+
     // Delete product
     await prisma.product.delete({
       where: { id },
