@@ -4,6 +4,7 @@ import CampaignBanner from '@/components/home/CampaignBanner';
 import StatsCounter from '@/components/home/StatsCounter';
 import Testimonials from '@/components/home/Testimonials';
 import TrustBadges from '@/components/home/TrustBadges';
+import Categories from '@/components/home/Categories';
 import prisma from '@/lib/db';
 import { mapProduct } from '@/lib/productHelper';
 
@@ -73,13 +74,20 @@ export default async function HomePage() {
     console.warn('Anasayfa veritabanı bağlantı hatası, varsayılan statik verilerle yükleniyor:', err.message);
   }
 
+  const showHero = settings.show_hero === undefined ? true : settings.show_hero === 'true';
+  const showBento = settings.show_bento === undefined ? true : settings.show_bento === 'true';
+  const showCampaign = settings.show_campaign === undefined ? true : settings.show_campaign === 'true';
+  const showStats = settings.show_stats === undefined ? true : settings.show_stats === 'true';
+  const showTestimonials = settings.show_testimonials === undefined ? true : settings.show_testimonials === 'true';
+
   return (
     <>
-      <HeroSection settings={settings} />
+      {showHero && <HeroSection settings={settings} />}
+      {showBento && <Categories />}
       <FeaturedProducts initialProducts={products} />
-      <CampaignBanner settings={settings} />
-      <StatsCounter settings={settings} />
-      <Testimonials testimonials={testimonials} />
+      {showCampaign && <CampaignBanner settings={settings} />}
+      {showStats && <StatsCounter settings={settings} />}
+      {showTestimonials && <Testimonials testimonials={testimonials} />}
       <TrustBadges />
     </>
   );

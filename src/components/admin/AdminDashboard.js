@@ -163,6 +163,14 @@ export default function AdminDashboard() {
   const [testimonialRating, setTestimonialRating] = useState('5');
   const [testimonialAvatar, setTestimonialAvatar] = useState('');
 
+  // Section visibility states
+  const [showHero, setShowHero] = useState(true);
+  const [showBento, setShowBento] = useState(true);
+  const [showCampaign, setShowCampaign] = useState(true);
+  const [showStats, setShowStats] = useState(true);
+  const [showAbout, setShowAbout] = useState(true);
+  const [showTestimonials, setShowTestimonials] = useState(true);
+
   // Homepage custom states
   const [activeHomeTab, setActiveHomeTab] = useState('hero');
   const [isUploadingCard1, setIsUploadingCard1] = useState(false);
@@ -242,6 +250,13 @@ export default function AdminDashboard() {
         const s = settingsData.settings || {};
         setHomeSettings(s);
         setHomeTestimonials(testimonialsData.testimonials || []);
+
+        setShowHero(s.show_hero === undefined ? true : s.show_hero === 'true');
+        setShowBento(s.show_bento === undefined ? true : s.show_bento === 'true');
+        setShowCampaign(s.show_campaign === undefined ? true : s.show_campaign === 'true');
+        setShowStats(s.show_stats === undefined ? true : s.show_stats === 'true');
+        setShowAbout(s.show_about === undefined ? true : s.show_about === 'true');
+        setShowTestimonials(s.show_testimonials === undefined ? true : s.show_testimonials === 'true');
 
         // Initialize form states
         setHeroTitle(s.hero_title || '');
@@ -959,7 +974,13 @@ export default function AdminDashboard() {
         about_vision_title: aboutVisionTitle,
         about_vision_text: aboutVisionText,
         about_image: aboutImage,
-        stats: JSON.stringify(statsArray)
+        stats: JSON.stringify(statsArray),
+        show_hero: showHero.toString(),
+        show_bento: showBento.toString(),
+        show_campaign: showCampaign.toString(),
+        show_stats: showStats.toString(),
+        show_about: showAbout.toString(),
+        show_testimonials: showTestimonials.toString()
       }
     };
 
@@ -981,6 +1002,68 @@ export default function AdminDashboard() {
       setError('Bağlantı hatası.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Asynchronously toggle testimonials section visibility in database (instant save since testimonials is not a form)
+  const handleToggleTestimonialsVisibility = async (checked) => {
+    setShowTestimonials(checked);
+    try {
+      const statsArray = [
+        { label: stat1Label, value: parseInt(stat1Value) || 0, suffix: stat1Suffix },
+        { label: stat2Label, value: parseInt(stat2Value) || 0, suffix: stat2Suffix },
+        { label: stat3Label, value: parseInt(stat3Value) || 0, suffix: stat3Suffix }
+      ];
+      const payload = {
+        settings: {
+          hero_title: heroTitle,
+          hero_subtitle: heroSubtitle,
+          hero_btn1_text: heroBtn1Text,
+          hero_btn1_link: heroBtn1Link,
+          hero_btn2_text: heroBtn2Text,
+          hero_btn2_link: heroBtn2Link,
+          hero_card1_title: heroCard1Title,
+          hero_card1_subtitle: heroCard1Subtitle,
+          hero_card1_image: heroCard1Image,
+          hero_card1_link: heroCard1Link,
+          hero_card2_title: heroCard2Title,
+          hero_card2_subtitle: heroCard2Subtitle,
+          hero_card2_image: heroCard2Image,
+          hero_card2_badge: heroCard2Badge,
+          hero_card2_link: heroCard2Link,
+          hero_card3_title: heroCard3Title,
+          hero_card3_subtitle: heroCard3Subtitle,
+          hero_card3_image: heroCard3Image,
+          hero_card3_link: heroCard3Link,
+          campaign_title: campaignTitle,
+          campaign_subtitle: campaignSubtitle,
+          campaign_btn_text: campaignBtnText,
+          campaign_btn_link: campaignBtnLink,
+          campaign_hours: campaignHours,
+          about_title: aboutTitle,
+          about_subtitle: aboutSubtitle,
+          about_mission_title: aboutMissionTitle,
+          about_mission_text: aboutMissionText,
+          about_vision_title: aboutVisionTitle,
+          about_vision_text: aboutVisionText,
+          about_image: aboutImage,
+          stats: JSON.stringify(statsArray),
+          show_hero: showHero.toString(),
+          show_bento: showBento.toString(),
+          show_campaign: showCampaign.toString(),
+          show_stats: showStats.toString(),
+          show_about: showAbout.toString(),
+          show_testimonials: checked.toString()
+        }
+      };
+      await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      fetchData();
+    } catch (err) {
+      console.error('Testimonials visibility toggle error:', err);
     }
   };
 
@@ -2302,9 +2385,21 @@ export default function AdminDashboard() {
                               {/* Hero Settings */}
                               {activeHomeTab === 'hero' && (
                                 <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5">
-                                  <div className="space-y-1 pb-2 border-b">
-                                    <h3 className="text-md font-bold text-slate-900">Giriş (Hero) Bölümü Ayarları</h3>
-                                    <p className="text-xs text-slate-400 font-semibold">Hero başlıklarını ve eylem düğmelerini yönetin.</p>
+                                  <div className="space-y-1 pb-2 border-b flex justify-between items-center flex-wrap gap-4">
+                                    <div>
+                                      <h3 className="text-md font-bold text-slate-900">Giriş (Hero) Bölümü Ayarları</h3>
+                                      <p className="text-xs text-slate-400 font-semibold">Ana sayfa giriş başlığı, açıklaması ve ana butonlarını yönetin.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={showHero}
+                                        onChange={(e) => setShowHero(e.target.checked)}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                      <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showHero ? 'AÇIK' : 'KAPALI'}</span>
+                                    </label>
                                   </div>
                                   <div className="space-y-4">
                                     <div>
@@ -2382,6 +2477,24 @@ export default function AdminDashboard() {
                               {/* Bento Cards Settings */}
                               {activeHomeTab === 'bento' && (
                                 <div className="space-y-6">
+                                  {/* Bölüm Görünürlük Kontrolü */}
+                                  <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm flex justify-between items-center flex-wrap gap-4">
+                                    <div>
+                                      <h3 className="text-sm font-bold text-slate-900">Bento Kartları Bölümü</h3>
+                                      <p className="text-xs text-slate-400 font-semibold">Ana sayfa bento grid yapısındaki kart içeriklerini yönetin.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={showBento}
+                                        onChange={(e) => setShowBento(e.target.checked)}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                      <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showBento ? 'AÇIK' : 'KAPALI'}</span>
+                                    </label>
+                                  </div>
+
                                   {/* Card 1 */}
                                   <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-4">
                                     <h4 className="text-sm font-black text-slate-800 pb-1 border-b">Kart 1 (Dijital Kitaplar)</h4>
@@ -2496,9 +2609,21 @@ export default function AdminDashboard() {
                               {/* Campaign Banner Settings */}
                               {activeHomeTab === 'campaign' && (
                                 <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5">
-                                  <div className="space-y-1 pb-2 border-b">
-                                    <h3 className="text-md font-bold text-slate-900">Kampanya Bannerı Ayarları</h3>
-                                    <p className="text-xs text-slate-400 font-semibold">Geri sayımlı kampanya çubuğunu özelleştirin.</p>
+                                  <div className="space-y-1 pb-2 border-b flex justify-between items-center flex-wrap gap-4">
+                                    <div>
+                                      <h3 className="text-md font-bold text-slate-900">Kampanya Bannerı Ayarları</h3>
+                                      <p className="text-xs text-slate-400 font-semibold">Geri sayımlı kampanya çubuğunu özelleştirin.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={showCampaign}
+                                        onChange={(e) => setShowCampaign(e.target.checked)}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                      <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showCampaign ? 'AÇIK' : 'KAPALI'}</span>
+                                    </label>
                                   </div>
                                   <div className="space-y-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -2564,9 +2689,21 @@ export default function AdminDashboard() {
                               {/* Stats Settings */}
                               {activeHomeTab === 'stats' && (
                                 <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5">
-                                  <div className="space-y-1 pb-2 border-b">
-                                    <h3 className="text-md font-bold text-slate-900">İstatistik Sayaçları Ayarları</h3>
-                                    <p className="text-xs text-slate-400 font-semibold">Homepage üzerinde listelenen 3 adet dinamik istatistiği yönetin.</p>
+                                  <div className="space-y-1 pb-2 border-b flex justify-between items-center flex-wrap gap-4">
+                                    <div>
+                                      <h3 className="text-md font-bold text-slate-900">İstatistik Sayaçları Ayarları</h3>
+                                      <p className="text-xs text-slate-400 font-semibold">Homepage üzerinde listelenen 3 adet dinamik istatistiği yönetin.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={showStats}
+                                        onChange={(e) => setShowStats(e.target.checked)}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                      <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showStats ? 'AÇIK' : 'KAPALI'}</span>
+                                    </label>
                                   </div>
                                   <div className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2629,9 +2766,21 @@ export default function AdminDashboard() {
                               {/* About Settings */}
                               {activeHomeTab === 'about' && (
                                 <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5">
-                                  <div className="space-y-1 pb-2 border-b">
-                                    <h3 className="text-md font-bold text-slate-900">Hakkımızda Sayfası Ayarları</h3>
-                                    <p className="text-xs text-slate-400 font-semibold">Hakkımızda sayfa içeriğini ve görsellerini yönetin.</p>
+                                  <div className="space-y-1 pb-2 border-b flex justify-between items-center flex-wrap gap-4">
+                                    <div>
+                                      <h3 className="text-md font-bold text-slate-900">Hakkımızda Sayfası Ayarları</h3>
+                                      <p className="text-xs text-slate-400 font-semibold">Hakkımızda sayfa içeriğini ve görsellerini yönetin.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={showAbout}
+                                        onChange={(e) => setShowAbout(e.target.checked)}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                      <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showAbout ? 'AÇIK' : 'KAPALI'}</span>
+                                    </label>
                                   </div>
                                   <div className="space-y-4">
                                     <div>
@@ -2753,12 +2902,31 @@ export default function AdminDashboard() {
                           ) : (
                             
                             /* Testimonials Panel */
-                            <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
-                              <div className="px-6 py-5 border-b border-slate-105 flex justify-between items-center bg-white">
+                            <div className="space-y-6">
+                              {/* Bölüm Görünürlük Kontrolü (Anlık Kaydeder) */}
+                              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm flex justify-between items-center flex-wrap gap-4">
                                 <div>
-                                  <h3 className="text-md font-bold text-slate-900">Öğrenci Yorumları (Testimonials)</h3>
-                                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Platform hakkında sitenin alt kısmında dönecek yorumları yönetin.</p>
+                                  <h3 className="text-sm font-bold text-slate-900">Yorumlar Bölümü Görünürlüğü</h3>
+                                  <p className="text-xs text-slate-400 font-semibold">Ana sayfanın altındaki öğrenci yorumları bölümünü açın veya kapatın.</p>
                                 </div>
+                                <label className="relative inline-flex items-center cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={showTestimonials}
+                                    onChange={(e) => handleToggleTestimonialsVisibility(e.target.checked)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500/25 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                  <span className="ml-2 text-xs font-black text-slate-550 uppercase tracking-wider">{showTestimonials ? 'AÇIK' : 'KAPALI'}</span>
+                                </label>
+                              </div>
+
+                              <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
+                                <div className="px-6 py-5 border-b border-slate-105 flex justify-between items-center bg-white">
+                                  <div>
+                                    <h3 className="text-md font-bold text-slate-900">Öğrenci Yorumları (Testimonials)</h3>
+                                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Platform hakkında sitenin alt kısmında dönecek yorumları yönetin.</p>
+                                  </div>
                                 <button 
                                   type="button"
                                   onClick={handleOpenAddTestimonialModal}
@@ -2841,6 +3009,8 @@ export default function AdminDashboard() {
                               ) : (
                                 <div className="p-12 text-center text-slate-500 font-semibold text-xs">Yorum bulunamadı. &quot;Yorum Ekle&quot; butonuyla ekleme yapabilirsiniz.</div>
                               )}
+                            </div>
+                            
                             </div>
 
                           )}
