@@ -1126,6 +1126,15 @@ export default function AdminDashboard() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (showSlider) {
+      const emptySlider = sliders.find(s => !s.image);
+      if (emptySlider) {
+        setError('Lütfen tüm slaytlar için bir görsel yükleyin.');
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     const statsArray = [
@@ -2723,45 +2732,64 @@ export default function AdminDashboard() {
                                         </div>
 
                                         <div>
-                                          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 pl-1">Slayt Görseli (Dosya Yükle / URL)</label>
-                                          <div className="flex gap-2">
-                                            <input
-                                              type="text"
-                                              required
-                                              value={slider.image || ''}
-                                              onChange={(e) => {
-                                                const newSliders = [...sliders];
-                                                newSliders[idx] = { ...newSliders[idx], image: e.target.value };
-                                                setSliders(newSliders);
-                                              }}
-                                              placeholder="/uploads/banner1.webp"
-                                              className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono bg-white outline-none"
-                                            />
-                                            <label className="cursor-pointer px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shrink-0">
-                                              {slider.isUploading ? (
-                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                              ) : (
-                                                <PlusCircle className="w-4 h-4" />
-                                              )}
-                                              <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => handleUploadSettingImage(e, 
-                                                  (url) => {
+                                          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 pl-1">Slayt Görseli</label>
+                                          {slider.image ? (
+                                            <div className="space-y-2">
+                                              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 flex items-center justify-center h-32 w-full max-w-md">
+                                                <img 
+                                                  src={slider.image} 
+                                                  alt={`Slayt ${idx + 1} Önizleme`} 
+                                                  className="object-contain w-full h-full"
+                                                />
+                                              </div>
+                                              <div className="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-2 max-w-md">
+                                                <span className="text-[11px] text-slate-500 font-mono truncate pl-1" title={slider.image}>
+                                                  {slider.image.split('/').pop()}
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
                                                     const newSliders = [...sliders];
-                                                    newSliders[idx] = { ...newSliders[idx], image: url };
+                                                    newSliders[idx] = { ...newSliders[idx], image: '' };
                                                     setSliders(newSliders);
-                                                  }, 
-                                                  (val) => {
-                                                    const newSliders = [...sliders];
-                                                    newSliders[idx] = { ...newSliders[idx], isUploading: val };
-                                                    setSliders(newSliders);
-                                                  }
+                                                  }}
+                                                  className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 hover:text-red-700 border border-red-150 hover:border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                                                >
+                                                  <Trash2 className="w-3.5 h-3.5" />
+                                                  <span>Kaldır</span>
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-white/50 text-center space-y-2 max-w-md">
+                                              <span className="text-xs text-slate-450 font-semibold">Görsel Seçilmedi</span>
+                                              <label className="cursor-pointer px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
+                                                {slider.isUploading ? (
+                                                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                  <PlusCircle className="w-4 h-4" />
                                                 )}
-                                                className="hidden"
-                                              />
-                                            </label>
-                                          </div>
+                                                <span>Görsel Yükle</span>
+                                                <input
+                                                  type="file"
+                                                  accept="image/*"
+                                                  onChange={(e) => handleUploadSettingImage(e, 
+                                                    (url) => {
+                                                      const newSliders = [...sliders];
+                                                      newSliders[idx] = { ...newSliders[idx], image: url };
+                                                      setSliders(newSliders);
+                                                    }, 
+                                                    (val) => {
+                                                      const newSliders = [...sliders];
+                                                      newSliders[idx] = { ...newSliders[idx], isUploading: val };
+                                                      setSliders(newSliders);
+                                                    }
+                                                  )}
+                                                  className="hidden"
+                                                />
+                                              </label>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     ))}
