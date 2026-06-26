@@ -68,6 +68,7 @@ export async function POST(request) {
 
     revalidatePath('/');
     revalidatePath('/hakkimizda');
+    revalidatePath('/sss');
 
     return NextResponse.json({ message: 'Ayarlar başarıyla kaydedildi.' });
   } catch (error) {

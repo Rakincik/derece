@@ -136,6 +136,7 @@ export default function AdminDashboard() {
   // Home Settings CMS states
   const [homeSettings, setHomeSettings] = useState({});
   const [homeTestimonials, setHomeTestimonials] = useState([]);
+  const [globalFaqs, setGlobalFaqs] = useState([]);
   
   // Hero Form States
   const [heroTitle, setHeroTitle] = useState('');
@@ -468,6 +469,44 @@ export default function AdminDashboard() {
         setStat3Label(stats[2]?.label || '');
         setStat3Value(stats[2]?.value || '');
         setStat3Suffix(stats[2]?.suffix || '');
+
+        let faqsData = [];
+        try {
+          if (s.faqs) {
+            faqsData = JSON.parse(s.faqs);
+          } else {
+            faqsData = [
+              {
+                id: '1',
+                question: 'Dijital kitapları indirdikten sonra internetsiz kullanabilir miyim?',
+                answer: 'Evet! Satın aldığınız dijital kitapları (PDF/ePub formatında) cihazınıza indirdikten sonra herhangi bir internet bağlantısına ihtiyaç duymadan, istediğiniz zaman kullanabilirsiniz.'
+              },
+              {
+                id: '2',
+                question: 'Satın aldığım kurslara ne kadar süreyle erişebilirim?',
+                answer: 'Satın aldığınız video ders ve dijital kurs paketlerine 1 yıl (365 gün) boyunca sınırsız olarak erişim sağlayabilirsiniz. Ayrıca içerik güncellemelerinden ücretsiz olarak faydalanırsınız.'
+              },
+              {
+                id: '3',
+                question: 'Kredi kartına taksit imkanı var mı?',
+                answer: 'Evet, anlaşmalı olduğumuz bankaların kredi kartlarıyla yapacağınız 200 TL ve üzeri alışverişlerinizde peşin fiyatına 3, toplamda 9 aya varan taksit seçeneklerinden yararlanabilirsiniz.'
+              },
+              {
+                id: '4',
+                question: 'Sınav paketlerini birden fazla cihazda kullanabilir miyim?',
+                answer: 'Satın aldığınız ürünleri bilgisayar, tablet veya cep telefonunuzdan giriş yaparak kullanabilirsiniz. Güvenlik önlemleri gereği eşzamanlı olarak sadece tek bir cihazdan aktif oturum açabilirsiniz.'
+              },
+              {
+                id: '5',
+                question: 'İade politikanız nedir?',
+                answer: 'Dijital ürünler doğası gereği indirilebilir içerik olduğundan, ürün dosyası indirilmemişse 14 gün içerisinde iade talebinde bulunabilirsiniz. Konuyla ilgili destek ekibimizle iletişime geçmeniz yeterlidir.'
+              }
+            ];
+          }
+        } catch (e) {
+          console.error(e);
+        }
+        setGlobalFaqs(faqsData);
 
       } else {
         setError('Veriler sunucudan yüklenemedi. Yetkili olduğunuzdan emin olun.');
@@ -1141,7 +1180,8 @@ export default function AdminDashboard() {
         show_testimonials: showTestimonials.toString(),
         show_slider: showSlider.toString(),
         homepage_sliders: JSON.stringify(sliders.map(({ image, link, title }) => ({ image, link, title }))),
-        homepage_section_order: JSON.stringify(sectionOrder)
+        homepage_section_order: JSON.stringify(sectionOrder),
+        faqs: JSON.stringify(globalFaqs.map(({ id, question, answer }) => ({ id, question, answer })))
       }
     };
 
@@ -2584,6 +2624,7 @@ export default function AdminDashboard() {
                               { id: 'stats', label: 'İstatistikler', icon: CheckSquare },
                               { id: 'about', label: 'Hakkımızda', icon: BookOpen },
                               { id: 'testimonials', label: 'Yorumlar', icon: MessageSquare },
+                              { id: 'faq', label: 'S.S.S. Yönetimi', icon: HelpCircle },
                               { id: 'ordering', label: 'Bölüm Sıralaması', icon: List }
                             ].map((tab) => {
                               const TabIcon = tab.icon;
@@ -3288,7 +3329,7 @@ export default function AdminDashboard() {
                                               className={`p-2 rounded-xl border transition-colors ${
                                                 index === 0
                                                   ? 'bg-slate-100 border-slate-100 text-slate-350 cursor-not-allowed'
-                                                  : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
+                                                  : 'bg-white border-slate-200 text-slate-655 hover:bg-slate-50'
                                               }`}
                                             >
                                               <ArrowUp className="w-3.5 h-3.5" />
@@ -3306,7 +3347,7 @@ export default function AdminDashboard() {
                                               className={`p-2 rounded-xl border transition-colors ${
                                                 index === sectionOrder.length - 1
                                                   ? 'bg-slate-100 border-slate-100 text-slate-350 cursor-not-allowed'
-                                                  : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
+                                                  : 'bg-white border-slate-200 text-slate-655 hover:bg-slate-50'
                                               }`}
                                             >
                                               <ArrowDown className="w-3.5 h-3.5" />
@@ -3315,6 +3356,79 @@ export default function AdminDashboard() {
                                         </div>
                                       );
                                     })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {activeHomeTab === 'faq' && (
+                                <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5">
+                                  <div className="pb-2 border-b">
+                                    <h3 className="text-md font-bold text-slate-900">Sıkça Sorulan Sorular (S.S.S.) Ayarları</h3>
+                                    <p className="text-xs text-slate-400 font-semibold">Web sitesindeki genel S.S.S. sayfasında gösterilen soru ve cevapları düzenleyin.</p>
+                                  </div>
+
+                                  <div className="space-y-4">
+                                    {globalFaqs.map((faq, idx) => (
+                                      <div key={faq.id || idx} className="border border-slate-100 p-4 rounded-2xl bg-slate-50/50 space-y-3 relative">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newFaqs = globalFaqs.filter((_, i) => i !== idx);
+                                            setGlobalFaqs(newFaqs);
+                                          }}
+                                          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                          <Trash className="w-4 h-4" />
+                                        </button>
+
+                                        <div className="text-xs font-bold text-slate-400">Soru #{idx + 1}</div>
+
+                                        <div className="grid grid-cols-1 gap-3">
+                                          <div>
+                                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Soru</label>
+                                            <input
+                                              type="text"
+                                              required
+                                              value={faq.question || ''}
+                                              onChange={(e) => {
+                                                const newFaqs = [...globalFaqs];
+                                                newFaqs[idx] = { ...newFaqs[idx], question: e.target.value };
+                                                setGlobalFaqs(newFaqs);
+                                              }}
+                                              placeholder="Örn: Dijital kitapları internetsiz kullanabilir miyim?"
+                                              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:border-amber-500/40 outline-none transition-colors"
+                                            />
+                                          </div>
+
+                                          <div>
+                                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Cevap</label>
+                                            <textarea
+                                              required
+                                              rows={3}
+                                              value={faq.answer || ''}
+                                              onChange={(e) => {
+                                                const newFaqs = [...globalFaqs];
+                                                newFaqs[idx] = { ...newFaqs[idx], answer: e.target.value };
+                                                setGlobalFaqs(newFaqs);
+                                              }}
+                                              placeholder="Örn: Evet, cihazınıza indirdikten sonra internetsiz kullanabilirsiniz."
+                                              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:border-amber-500/40 outline-none transition-colors resize-none"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setGlobalFaqs([...globalFaqs, { id: String(Date.now()), question: '', answer: '' }]);
+                                      }}
+                                      className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-slate-350 hover:bg-slate-50 text-slate-500 hover:text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                                    >
+                                      <PlusCircle className="w-4 h-4" />
+                                      <span>Yeni Soru Ekle</span>
+                                    </button>
                                   </div>
                                 </div>
                               )}
