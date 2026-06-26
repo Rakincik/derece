@@ -594,19 +594,19 @@ export default function CartDrawer() {
       {/* Glassmorphic Auth Alert Modal */}
       <AnimatePresence>
         {isAuthAlertOpen && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-2xl text-slate-100 flex flex-col items-center text-center gap-4"
+              className="w-full max-w-sm bg-white border border-slate-200 p-6 rounded-[2rem] shadow-2xl text-slate-800 flex flex-col items-center text-center gap-4"
             >
-              <div className="w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center">
                 <AlertCircle className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Giriş Yapmanız Gerekiyor</h3>
-                <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+                <h3 className="text-lg font-black text-slate-900">Giriş Yapmanız Gerekiyor</h3>
+                <p className="text-sm text-slate-650 mt-2 leading-relaxed">
                   Eğitim satın alabilmek için lütfen önce giriş yapın veya kayıt olun. Hesabım sayfasına yönlendirileceksiniz.
                 </p>
               </div>
@@ -617,13 +617,13 @@ export default function CartDrawer() {
                     closeCart();
                     window.location.href = '/hesabim';
                   }}
-                  className="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white transition-all text-sm shadow-lg shadow-indigo-500/20"
+                  className="w-full py-3 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all text-sm shadow-md shadow-amber-500/10"
                 >
                   Giriş Yap / Kayıt Ol
                 </button>
                 <button
                   onClick={() => setIsAuthAlertOpen(false)}
-                  className="w-full py-2.5 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors text-xs"
+                  className="w-full py-2.5 rounded-xl font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors text-xs border border-slate-200/60"
                 >
                   Vazgeç
                 </button>
