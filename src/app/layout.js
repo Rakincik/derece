@@ -8,6 +8,9 @@ export const metadata = {
   title: 'Dereceuzem — Dijital Eğitim Ürünleri',
   description: 'Dijital kitaplar, video ders setleri, deneme sınavları ve kombo paketlerle başarıya giden yolda yanınızdayız. Anında dijital erişim.',
   keywords: 'dijital eğitim, online ders, video ders, deneme sınavı, dijital kitap, YKS, TYT, AYT, KPSS',
+  icons: {
+    icon: '/favicon.png',
+  },
   openGraph: {
     title: 'Dereceuzem — Dijital Eğitim Ürünleri',
     description: 'Dijital kitaplar, video ders setleri, deneme sınavları ve kombo paketlerle başarıya giden yolda yanınızdayız.',
