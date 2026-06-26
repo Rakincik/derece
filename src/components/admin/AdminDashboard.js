@@ -111,18 +111,24 @@ export default function AdminDashboard() {
 
   // Search Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [orderFilterStatus, setOrderFilterStatus] = useState('');
+  const [orderSortBy, setOrderSortBy] = useState('newest');
+  const [orderFilterProduct, setOrderFilterProduct] = useState('');
+  const [orderFilterType, setOrderFilterType] = useState('');
+  const [orderFilterDateRange, setOrderFilterDateRange] = useState('');
 
   // Products Management filter/search/sort/view state
   const [productsViewMode, setProductsViewMode] = useState('list'); // list or grid
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [productFilterCategory, setProductFilterCategory] = useState('');
-  const [productFilterType, setProductFilterType] = useState('');
+  const [productFilterBadge, setProductFilterBadge] = useState('');
   const [productSortBy, setProductSortBy] = useState('newest'); // newest, oldest, price-asc, price-desc, alphabet
 
   // Grant Access Form states
   const [grantEmail, setGrantEmail] = useState('');
   const [grantProductId, setGrantProductId] = useState('');
   const [grantAmount, setGrantAmount] = useState('');
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
   // Coupon Form states
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
@@ -1388,9 +1394,17 @@ export default function AdminDashboard() {
       product.type.toLowerCase().includes(query);
 
     const matchesCategory = !productFilterCategory || product.categoryId === productFilterCategory;
-    const matchesType = !productFilterType || product.type === productFilterType;
+    
+    let matchesBadge = true;
+    if (productFilterBadge === 'featured') {
+      matchesBadge = product.isFeatured;
+    } else if (productFilterBadge === 'bestseller') {
+      matchesBadge = product.isBestseller;
+    } else if (productFilterBadge === 'discounted') {
+      matchesBadge = product.discountedPrice !== null && product.discountedPrice > 0;
+    }
 
-    return matchesSearch && matchesCategory && matchesType;
+    return matchesSearch && matchesCategory && matchesBadge;
   }).sort((a, b) => {
     if (productSortBy === 'newest') {
       return new Date(b.createdAt) - new Date(a.createdAt);
@@ -1686,26 +1700,128 @@ export default function AdminDashboard() {
 
             {/* Global Search Bar (Only shown for lists: orders, users, coupons, messages) */}
             {activeSection !== 'grant' && activeSection !== 'products' && (
-              <div className="mb-6 relative max-w-md">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ara (isim, e-posta, kod, konu...)"
-                  className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-amber-500/40 focus:ring-2 focus:ring-amber-500/5 transition-all text-sm font-medium shadow-sm"
-                />
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+              <div className="mb-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Ara (isim, e-posta, kod, konu...)"
+                    className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-amber-500/40 focus:ring-2 focus:ring-amber-500/5 transition-all text-sm font-medium shadow-sm"
+                  />
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+
+                {activeSection === 'orders' && (
+                  <div className="flex flex-wrap gap-3 items-center">
+                    {/* Product Filter */}
+                    <div className="relative">
+                      <select
+                        value={orderFilterProduct}
+                        onChange={(e) => setOrderFilterProduct(e.target.value)}
+                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <option value="">Eğitim: Tümü</option>
+                        {products.map(p => (
+                          <option key={p.id} value={p.id}>{p.title}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="relative">
+                      <select
+                        value={orderFilterStatus}
+                        onChange={(e) => setOrderFilterStatus(e.target.value)}
+                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <option value="">Ödeme Durumu: Tümü</option>
+                        <option value="SUCCESS">Başarılı</option>
+                        <option value="FAILED">Başarısız</option>
+                        <option value="PENDING">Bekleyen</option>
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Sales Type Filter */}
+                    <div className="relative">
+                      <select
+                        value={orderFilterType}
+                        onChange={(e) => setOrderFilterType(e.target.value)}
+                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <option value="">Satış Türü: Tümü</option>
+                        <option value="pos">Sanal POS (Kart)</option>
+                        <option value="manual">Manuel Tanımlama</option>
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Date Range Filter */}
+                    <div className="relative">
+                      <select
+                        value={orderFilterDateRange}
+                        onChange={(e) => setOrderFilterDateRange(e.target.value)}
+                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <option value="">Tarih Aralığı: Tümü</option>
+                        <option value="today">Bugün</option>
+                        <option value="week">Son 7 Gün</option>
+                        <option value="month">Bu Ay</option>
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Sort Options */}
+                    <div className="relative">
+                      <select
+                        value={orderSortBy}
+                        onChange={(e) => setOrderSortBy(e.target.value)}
+                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <option value="newest">Tarih: Yeni &gt; Eski</option>
+                        <option value="oldest">Tarih: Eski &gt; Yeni</option>
+                        <option value="amount-desc">Tutar: Azalan</option>
+                        <option value="amount-asc">Tutar: Artan</option>
+                        <option value="name-asc">Öğrenci: A &gt; Z</option>
+                        <option value="name-desc">Öğrenci: Z &gt; A</option>
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -1766,18 +1882,17 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        {/* Type Filter */}
+                        {/* Badge / Status Filter */}
                         <div className="relative">
                           <select
-                            value={productFilterType}
-                            onChange={(e) => setProductFilterType(e.target.value)}
+                            value={productFilterBadge}
+                            onChange={(e) => setProductFilterBadge(e.target.value)}
                             className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors appearance-none cursor-pointer"
                           >
-                            <option value="">Tüm Ürün Tipleri</option>
-                            <option value="Video Ders Seti">Video Ders Seti</option>
-                            <option value="Dijital Kitap">Dijital Kitap</option>
-                            <option value="Deneme Paketi">Deneme Paketi</option>
-                            <option value="Kombo Paket">Kombo Paket</option>
+                            <option value="">Tüm Rozetler / Durum</option>
+                            <option value="featured">Öne Çıkanlar</option>
+                            <option value="bestseller">Çok Satanlar</option>
+                            <option value="discounted">İndirimli Ürünler</option>
                           </select>
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                             <ChevronDown className="w-3.5 h-3.5" />
@@ -1989,7 +2104,7 @@ export default function AdminDashboard() {
                           onClick={() => {
                             setProductSearchQuery('');
                             setProductFilterCategory('');
-                            setProductFilterType('');
+                            setProductFilterBadge('');
                             setProductSortBy('newest');
                           }} 
                           className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-colors"
@@ -2017,41 +2132,108 @@ export default function AdminDashboard() {
                             </tr>
                           </thead>
                           <tbody>
-                            {orders.filter(order => {
-                              const query = searchQuery.toLowerCase().trim();
-                              if (!query) return true;
-                              return (
-                                order.user?.name?.toLowerCase().includes(query) ||
-                                order.user?.email?.toLowerCase().includes(query) ||
-                                order.product?.title?.toLowerCase().includes(query)
-                              );
-                            }).map((order) => (
-                              <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
-                                <td className="py-3 px-3">
-                                  <div className="font-bold text-slate-800 text-xs">{order.user?.name || 'İsimsiz Kullanıcı'}</div>
-                                  <div className="text-[10px] text-slate-400 font-medium">{order.user?.email}</div>
-                                </td>
-                                <td className="py-3 px-3">
-                                  <div className="font-semibold text-slate-700 text-xs line-clamp-1">{order.product?.title}</div>
-                                  <span className="text-[9px] font-bold text-slate-550 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
-                                    {order.product?.type}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-3 text-xs text-slate-500 whitespace-nowrap">
-                                  {new Date(order.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </td>
-                                <td className="py-3 px-3 whitespace-nowrap">
-                                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                                    order.paymentStatus === 'SUCCESS' 
-                                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                                      : 'bg-red-55 text-red-650 border-red-155 bg-red-50 border-red-100'
-                                  }`}>
-                                    {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : 'BAŞARISIZ'}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-3 text-right font-black text-slate-900 whitespace-nowrap text-xs">{order.amount.toLocaleString('tr-TR')} ₺</td>
-                              </tr>
-                            ))}
+                            {(() => {
+                              let processedOrders = orders.filter(order => {
+                                // 1. Search Query filter
+                                const query = searchQuery.toLowerCase().trim();
+                                const matchesSearch = !query || (
+                                  order.user?.name?.toLowerCase().includes(query) ||
+                                  order.user?.email?.toLowerCase().includes(query) ||
+                                  order.product?.title?.toLowerCase().includes(query)
+                                );
+                                
+                                // 2. Payment Status filter
+                                const matchesStatus = !orderFilterStatus || order.paymentStatus === orderFilterStatus;
+                                
+                                // 3. Product filter
+                                const matchesProduct = !orderFilterProduct || order.productId === orderFilterProduct;
+
+                                // 4. Sales/Payment Type filter
+                                let matchesType = true;
+                                if (orderFilterType === 'pos') {
+                                  matchesType = order.paymentId !== 'MANUAL_GRANT_BY_ADMIN';
+                                } else if (orderFilterType === 'manual') {
+                                  matchesType = order.paymentId === 'MANUAL_GRANT_BY_ADMIN';
+                                }
+
+                                // 5. Date Range filter
+                                let matchesDate = true;
+                                if (orderFilterDateRange) {
+                                  const orderDate = new Date(order.createdAt);
+                                  const now = new Date();
+                                  if (orderFilterDateRange === 'today') {
+                                    matchesDate = orderDate.toDateString() === now.toDateString();
+                                  } else if (orderFilterDateRange === 'week') {
+                                    const sevenDaysAgo = new Date();
+                                    sevenDaysAgo.setDate(now.getDate() - 7);
+                                    matchesDate = orderDate >= sevenDaysAgo;
+                                  } else if (orderFilterDateRange === 'month') {
+                                    matchesDate = orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+                                  }
+                                }
+
+                                return matchesSearch && matchesStatus && matchesProduct && matchesType && matchesDate;
+                              });
+                              
+                              // 3. Sorting
+                              processedOrders.sort((a, b) => {
+                                if (orderSortBy === 'newest') {
+                                  return new Date(b.createdAt) - new Date(a.createdAt);
+                                }
+                                if (orderSortBy === 'oldest') {
+                                  return new Date(a.createdAt) - new Date(b.createdAt);
+                                }
+                                if (orderSortBy === 'amount-desc') {
+                                  return b.amount - a.amount;
+                                }
+                                if (orderSortBy === 'amount-asc') {
+                                  return a.amount - b.amount;
+                                }
+                                if (orderSortBy === 'name-asc') {
+                                  return (a.user?.name || '').localeCompare(b.user?.name || '', 'tr');
+                                }
+                                if (orderSortBy === 'name-desc') {
+                                  return (b.user?.name || '').localeCompare(a.user?.name || '', 'tr');
+                                }
+                                return 0;
+                              });
+
+                              return processedOrders.map((order) => (
+                                <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
+                                  <td className="py-3 px-3">
+                                    <button
+                                      onClick={() => {
+                                        const targetUser = users.find(u => u.id === order.userId || u.email === order.user?.email);
+                                        setSelectedUser(targetUser || order.user);
+                                      }}
+                                      className="font-bold text-slate-800 text-xs hover:text-indigo-600 hover:underline transition-colors text-left focus:outline-none block"
+                                    >
+                                      {order.user?.name || 'İsimsiz Kullanıcı'}
+                                    </button>
+                                    <div className="text-[10px] text-slate-400 font-medium">{order.user?.email}</div>
+                                  </td>
+                                  <td className="py-3 px-3">
+                                    <div className="font-semibold text-slate-700 text-xs line-clamp-1">{order.product?.title}</div>
+                                    <span className="text-[9px] font-bold text-slate-550 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
+                                      {order.product?.type}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3 text-xs text-slate-500 whitespace-nowrap">
+                                    {new Date(order.createdAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </td>
+                                  <td className="py-3 px-3 whitespace-nowrap">
+                                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                      order.paymentStatus === 'SUCCESS' 
+                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                                        : 'bg-red-50 text-red-600 border-red-100'
+                                    }`}>
+                                      {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : 'BAŞARISIZ'}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3 text-right font-black text-slate-900 whitespace-nowrap text-xs">{order.amount.toLocaleString('tr-TR')} ₺</td>
+                                </tr>
+                              ));
+                            })()}
                           </tbody>
                         </table>
                       </div>
@@ -3639,21 +3821,47 @@ export default function AdminDashboard() {
                     <div className="mb-6">
                       <h3 className="text-xl font-bold text-slate-800 mb-2">Manuel Ürün Erişimi Tanımla</h3>
                       <p className="text-slate-500 text-xs leading-relaxed font-medium">
-                        Banka havalesi ile ödeme yapan öğrencilerin e-posta adreslerini yazarak dilediğiniz eğitimi anında profillerine ekleyebilirsiniz.
+                        Öğrencilerin e-posta adreslerini yazarak dilediğiniz eğitimi anında profillerine ekleyebilirsiniz.
                       </p>
                     </div>
 
                     <form onSubmit={handleGrantAccess} className="space-y-6">
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-450 uppercase tracking-widest mb-2 pl-1">Öğrenci E-Posta Adresi</label>
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-slate-450 uppercase tracking-widest pl-1">Öğrenci Seçin</label>
+                        
+                        {/* Quick filter input */}
                         <input 
-                          type="email" 
+                          type="text"
+                          placeholder="Öğrenci ara (isim veya e-posta)..."
+                          value={studentSearchQuery}
+                          onChange={(e) => setStudentSearchQuery(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-50/50 border border-slate-200/60 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-amber-500/30 transition-colors"
+                        />
+
+                        <select 
                           required
                           value={grantEmail}
                           onChange={(e) => setGrantEmail(e.target.value)}
-                          placeholder="ogrenci@email.com"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors"
-                        />
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 font-medium focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors cursor-pointer"
+                        >
+                          <option value="">-- Öğrenci Seçin --</option>
+                          {users
+                            .filter(u => {
+                              const sQuery = (studentSearchQuery || '').toLowerCase().trim();
+                              if (!sQuery) return true;
+                              return (
+                                u.name?.toLowerCase().includes(sQuery) ||
+                                u.email?.toLowerCase().includes(sQuery)
+                              );
+                            })
+                            .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr'))
+                            .map(u => (
+                              <option key={u.id} value={u.email}>
+                                {u.name ? `${u.name} (${u.email})` : u.email}
+                              </option>
+                            ))
+                          }
+                        </select>
                       </div>
 
                       <div>

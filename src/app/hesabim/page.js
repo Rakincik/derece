@@ -1,16 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, Mail, Lock, Download, Play, FileCheck, Clock, Package, LogIn, LogOut, ArrowRight, ShieldAlert, Phone, MapPin } from 'lucide-react';
+import { User, Mail, Lock, Download, Play, FileCheck, Clock, Package, LogIn, LogOut, ArrowRight, ShieldAlert, Phone, MapPin, CheckCircle2 } from 'lucide-react';
 import { turkeyCities } from '@/data/turkeyDb';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function AccountPage() {
+function AccountPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      setShowPaymentSuccess(true);
+    }
+  }, [searchParams]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState('');
@@ -494,6 +502,62 @@ export default function AccountPage() {
           </div>
         )}
       </div>
+
+      {/* Ödeme Başarılı Pop-up Modalı */}
+      <AnimatePresence>
+        {showPaymentSuccess && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="bg-white/95 backdrop-blur-xl border border-emerald-500/25 max-w-sm w-full rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(16,185,129,0.18)] text-center relative overflow-hidden"
+            >
+              {/* Glow effects */}
+              <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-500 relative">
+                <div className="absolute inset-0 rounded-full bg-emerald-500/15 animate-ping opacity-75" />
+                <CheckCircle2 className="w-10 h-10 relative z-10" strokeWidth={1.5} />
+              </div>
+
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
+                Başarılı!
+              </h3>
+              <p className="text-sm font-semibold text-slate-600 mb-8 leading-relaxed px-2">
+                Ödemeniz başarıyla alınmıştır.
+              </p>
+
+              <button
+                onClick={() => {
+                  setShowPaymentSuccess(false);
+                  router.replace('/hesabim');
+                }}
+                className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black text-sm hover:bg-emerald-600 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-[0.98] transition-all"
+              >
+                Eğitimlerime Git
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[80vh] flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-slate-500 font-medium text-sm">Sayfa yükleniyor...</p>
+        </div>
+      </div>
+    }>
+      <AccountPageContent />
+    </Suspense>
   );
 }
