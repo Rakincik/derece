@@ -83,3 +83,13 @@ export function mapProduct(p) {
     categoryId: p.categoryId || null,
   };
 }
+
+export function formatPrice(price) {
+  if (price === undefined || price === null || isNaN(price)) return '';
+  const hasDecimal = price % 1 !== 0;
+  return new Intl.NumberFormat('tr-TR', {
+    minimumFractionDigits: hasDecimal ? 2 : 0,
+    maximumFractionDigits: 2
+  }).format(price) + ' ₺';
+}
+

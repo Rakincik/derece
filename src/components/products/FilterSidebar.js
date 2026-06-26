@@ -83,16 +83,17 @@ export default function FilterSidebar({
             Tüm Ürünler
           </motion.button>
           {categoriesList.map((cat) => {
+            const catKey = cat.slug || cat.id;
             const count = products.length > 0
-              ? products.filter(p => p.category === cat.id).length
+              ? products.filter(p => p.category === catKey || p.categoryId === cat.id).length
               : cat.count;
             return (
               <motion.button
                 key={cat.id}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => setSelectedCategory(catKey)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
-                  selectedCategory === cat.id
+                  selectedCategory === catKey
                     ? 'bg-accent-50 text-accent-700 border border-accent-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}

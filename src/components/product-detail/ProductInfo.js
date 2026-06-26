@@ -7,6 +7,8 @@ import Badge from '@/components/ui/Badge';
 import StarRating from '@/components/ui/StarRating';
 import Button from '@/components/ui/Button';
 import useCartStore from '@/store/cartStore';
+import { formatPrice } from '@/lib/productHelper';
+
 
 export default function ProductInfo({ product }) {
   const { addItem } = useCartStore();
@@ -93,16 +95,16 @@ export default function ProductInfo({ product }) {
           {hasDiscount ? (
             <>
               <span className="text-3xl font-bold font-mono text-accent-600">
-                ₺{product.discountedPrice.toFixed(2)}
+                {formatPrice(product.discountedPrice)}
               </span>
               <span className="text-lg text-slate-500 line-through font-mono">
-                ₺{product.price.toFixed(2)}
+                {formatPrice(product.price)}
               </span>
               <Badge variant="discount">%{discountPercentage} İndirim</Badge>
             </>
           ) : (
             <span className="text-3xl font-bold font-mono text-slate-900">
-              ₺{product.price.toFixed(2)}
+              {formatPrice(product.price)}
             </span>
           )}
         </div>

@@ -1657,9 +1657,9 @@ export default function AdminDashboard() {
                                 
                                 <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
                                   <div className="flex flex-col">
-                                    <span className="font-black text-slate-900 text-md">{product.price} ₺</span>
+                                    <span className="font-black text-slate-900 text-md">{product.price.toLocaleString('tr-TR')} ₺</span>
                                     {product.discountedPrice && (
-                                      <span className="text-[10px] text-slate-400 line-through font-semibold">{product.discountedPrice} ₺</span>
+                                      <span className="text-[10px] text-slate-400 line-through font-semibold">{product.discountedPrice.toLocaleString('tr-TR')} ₺</span>
                                     )}
                                   </div>
                                   <div className="flex gap-2">
@@ -1728,9 +1728,9 @@ export default function AdminDashboard() {
                                         )}
                                       </td>
                                       <td className="py-3 px-6">
-                                        <div className="font-bold text-slate-900">{product.price} ₺</div>
+                                        <div className="font-bold text-slate-900">{product.price.toLocaleString('tr-TR')} ₺</div>
                                         {product.discountedPrice && (
-                                          <div className="text-[10px] text-slate-400 line-through font-semibold">{product.discountedPrice} ₺</div>
+                                          <div className="text-[10px] text-slate-400 line-through font-semibold">{product.discountedPrice.toLocaleString('tr-TR')} ₺</div>
                                         )}
                                       </td>
                                       <td className="py-3 px-6">
@@ -1842,7 +1842,7 @@ export default function AdminDashboard() {
                                     {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : 'BAŞARISIZ'}
                                   </span>
                                 </td>
-                                <td className="py-4 px-6 text-right font-black text-slate-900">{order.amount} ₺</td>
+                                <td className="py-4 px-6 text-right font-black text-slate-900">{order.amount.toLocaleString('tr-TR')} ₺</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1985,7 +1985,7 @@ export default function AdminDashboard() {
                                 <td className="py-4 px-6 font-bold text-slate-800">
                                   {coupon.discountType === 'PERCENTAGE' 
                                     ? `% ${coupon.discountValue}` 
-                                    : `${coupon.discountValue} ₺`}
+                                    : `${coupon.discountValue.toLocaleString('tr-TR')} ₺`}
                                 </td>
                                 <td className="py-4 px-6 text-slate-600 font-medium">
                                   {coupon.uses} / {coupon.maxUses} kullanım
@@ -3192,7 +3192,7 @@ export default function AdminDashboard() {
                         >
                           <option value="">-- Ürün Seçin --</option>
                           {products.map(p => (
-                            <option key={p.id} value={p.id}>{p.title} ({p.price} ₺)</option>
+                            <option key={p.id} value={p.id}>{p.title} ({p.price.toLocaleString('tr-TR')} ₺)</option>
                           ))}
                         </select>
                       </div>
@@ -4040,7 +4040,7 @@ export default function AdminDashboard() {
                               }}
                               className="rounded text-emerald-500 focus:ring-emerald-500 w-4 h-4"
                             />
-                            <span className="text-xs font-semibold text-slate-650">{p.title} ({p.price} ₺)</span>
+                            <span className="text-xs font-semibold text-slate-650">{p.title} ({p.price.toLocaleString('tr-TR')} ₺)</span>
                           </label>
                         );
                       })}

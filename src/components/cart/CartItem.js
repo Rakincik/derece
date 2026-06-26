@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import useCartStore from '@/store/cartStore';
+import { formatPrice } from '@/lib/productHelper';
+
 
 export default function CartItem({ item }) {
   const { updateQuantity, removeItem } = useCartStore();
@@ -60,7 +62,7 @@ export default function CartItem({ item }) {
 
           {/* Price */}
           <span className="text-sm font-semibold font-mono text-accent-400">
-            ₺{(price * item.quantity).toFixed(2)}
+            {formatPrice(price * item.quantity)}
           </span>
         </div>
       </div>

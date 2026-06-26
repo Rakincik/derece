@@ -7,6 +7,8 @@ import useCartStore from '@/store/cartStore';
 import CartItem from './CartItem';
 import CouponInput from './CouponInput';
 import Button from '@/components/ui/Button';
+import { formatPrice } from '@/lib/productHelper';
+
 
 export default function CartDrawer() {
   const { 
@@ -305,7 +307,7 @@ export default function CartDrawer() {
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Ara Toplam</span>
                       <span className="text-slate-900 font-mono">
-                        ₺{getSubtotal().toFixed(2)}
+                        {formatPrice(getSubtotal())}
                       </span>
                     </div>
 
@@ -313,7 +315,7 @@ export default function CartDrawer() {
                       <div className="flex justify-between text-sm">
                         <span className="text-emerald-600">Kupon İndirimi (%{couponDiscount})</span>
                         <span className="text-emerald-600 font-mono">
-                          -₺{getDiscount().toFixed(2)}
+                          -{formatPrice(getDiscount())}
                         </span>
                       </div>
                     )}
@@ -321,7 +323,7 @@ export default function CartDrawer() {
                     <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-200">
                       <span className="text-slate-900">Toplam</span>
                       <span className="text-accent-600 font-mono text-lg">
-                        ₺{getTotal().toFixed(2)}
+                        {formatPrice(getTotal())}
                       </span>
                     </div>
 
@@ -548,11 +550,11 @@ export default function CartDrawer() {
                                   {inst.count === 1 ? 'Tek Çekim' : `${inst.count} Taksit`}
                                 </span>
                               </div>
-                              <div className="text-right font-mono">
+                               <div className="text-right font-mono">
                                 <div className="font-bold text-slate-900">
                                   {inst.count === 1 
-                                    ? `₺${inst.total.toFixed(2)}` 
-                                    : `${inst.count} x ₺${inst.monthlyPayment.toFixed(2)}`
+                                    ? formatPrice(inst.total) 
+                                    : `${inst.count} x ${formatPrice(inst.monthlyPayment)}`
                                   }
                                 </div>
                               </div>
@@ -567,7 +569,7 @@ export default function CartDrawer() {
                       <div>
                         <span className="text-[9px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider block">TOPLAM TUTAR</span>
                         <span className="text-base sm:text-lg font-mono font-black text-amber-500">
-                          ₺{selectedInstallment ? selectedInstallment.total.toFixed(2) : getTotal().toFixed(2)}
+                          {formatPrice(selectedInstallment ? selectedInstallment.total : getTotal())}
                         </span>
                       </div>
                       <button

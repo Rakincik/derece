@@ -7,6 +7,8 @@ import { ShoppingCart, Eye, TrendingUp } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import StarRating from '@/components/ui/StarRating';
 import useCartStore from '@/store/cartStore';
+import { formatPrice } from '@/lib/productHelper';
+
 
 export default function ProductCard({ product }) {
   const { addItem } = useCartStore();
@@ -107,15 +109,15 @@ export default function ProductCard({ product }) {
               {hasDiscount ? (
                 <>
                   <span className="text-lg font-bold font-mono text-accent-600">
-                    ₺{product.discountedPrice.toFixed(2)}
+                    {formatPrice(product.discountedPrice)}
                   </span>
                   <span className="text-xs text-slate-500 line-through font-mono">
-                    ₺{product.price.toFixed(2)}
+                    {formatPrice(product.price)}
                   </span>
                 </>
               ) : (
                 <span className="text-lg font-bold font-mono text-slate-900">
-                  ₺{product.price.toFixed(2)}
+                  {formatPrice(product.price)}
                 </span>
               )}
             </div>

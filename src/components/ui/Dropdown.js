@@ -45,7 +45,7 @@ export default function Dropdown({ value, onChange, options, className = '' }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.95 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute z-35 right-0 w-full min-w-[200px] mt-2 bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1.5 focus:outline-none"
+            className="absolute z-50 right-0 w-full min-w-[200px] mt-2 bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-xl overflow-hidden py-1.5 focus:outline-none"
           >
             {options.map((option) => {
               const isSelected = option.value === value;

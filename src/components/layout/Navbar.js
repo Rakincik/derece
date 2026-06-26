@@ -172,6 +172,16 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
+            {/* Ders Paneline Giriş Button */}
+            <Link 
+              href="https://dereceuzem.okinar.com/account/login" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center justify-center px-4 py-2 text-xs font-bold bg-accent-400 hover:bg-accent-500 text-white rounded-xl shadow-md shadow-accent-500/10 hover:shadow-lg active:scale-[0.98] transition-all mr-1.5"
+            >
+              Ders Paneline Giriş
+            </Link>
+
             {/* Search Toggle */}
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -281,6 +291,17 @@ export default function Navbar() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-accent-400 shadow-sm"
                 />
               </div>
+
+              {/* Ders Paneline Giriş Mobile Button */}
+              <Link 
+                href="https://dereceuzem.okinar.com/account/login"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center py-2.5 bg-accent-400 hover:bg-accent-500 text-white rounded-xl text-sm font-bold shadow-md shadow-accent-400/15 transition-all text-center mb-4"
+              >
+                Ders Paneline Giriş
+              </Link>
 
               {navLinks.map((link, i) => (
                 <motion.div
