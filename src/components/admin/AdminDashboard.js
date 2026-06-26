@@ -2691,8 +2691,7 @@ export default function AdminDashboard() {
                                         <button
                                           type="button"
                                           onClick={() => {
-                                            const newSliders = sliders.filter((_, i) => i !== idx);
-                                            setSliders(newSliders);
+                                            setSliders(prev => prev.filter((_, i) => i !== idx));
                                           }}
                                           className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-150 text-red-550 hover:text-red-700 hover:border-red-200 transition-colors"
                                           title="Slaytı Sil"
@@ -2707,9 +2706,12 @@ export default function AdminDashboard() {
                                               type="text"
                                               value={slider.title || ''}
                                               onChange={(e) => {
-                                                const newSliders = [...sliders];
-                                                newSliders[idx] = { ...newSliders[idx], title: e.target.value };
-                                                setSliders(newSliders);
+                                                const val = e.target.value;
+                                                setSliders(prev => {
+                                                  const next = [...prev];
+                                                  next[idx] = { ...next[idx], title: val };
+                                                  return next;
+                                                });
                                               }}
                                               placeholder="Örn: KPSS Kampanyası Başladı!"
                                               className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:border-amber-500/40 outline-none"
@@ -2721,9 +2723,12 @@ export default function AdminDashboard() {
                                               type="text"
                                               value={slider.link || ''}
                                               onChange={(e) => {
-                                                const newSliders = [...sliders];
-                                                newSliders[idx] = { ...newSliders[idx], link: e.target.value };
-                                                setSliders(newSliders);
+                                                const val = e.target.value;
+                                                setSliders(prev => {
+                                                  const next = [...prev];
+                                                  next[idx] = { ...next[idx], link: val };
+                                                  return next;
+                                                });
                                               }}
                                               placeholder="Örn: /urunler?category=kpss"
                                               className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:border-amber-500/40 outline-none"
@@ -2749,9 +2754,11 @@ export default function AdminDashboard() {
                                                 <button
                                                   type="button"
                                                   onClick={() => {
-                                                    const newSliders = [...sliders];
-                                                    newSliders[idx] = { ...newSliders[idx], image: '' };
-                                                    setSliders(newSliders);
+                                                    setSliders(prev => {
+                                                      const next = [...prev];
+                                                      next[idx] = { ...next[idx], image: '' };
+                                                      return next;
+                                                    });
                                                   }}
                                                   className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 hover:text-red-700 border border-red-150 hover:border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
                                                 >
@@ -2775,14 +2782,18 @@ export default function AdminDashboard() {
                                                   accept="image/*"
                                                   onChange={(e) => handleUploadSettingImage(e, 
                                                     (url) => {
-                                                      const newSliders = [...sliders];
-                                                      newSliders[idx] = { ...newSliders[idx], image: url };
-                                                      setSliders(newSliders);
+                                                      setSliders(prev => {
+                                                        const next = [...prev];
+                                                        next[idx] = { ...next[idx], image: url };
+                                                        return next;
+                                                      });
                                                     }, 
                                                     (val) => {
-                                                      const newSliders = [...sliders];
-                                                      newSliders[idx] = { ...newSliders[idx], isUploading: val };
-                                                      setSliders(newSliders);
+                                                      setSliders(prev => {
+                                                        const next = [...prev];
+                                                        next[idx] = { ...next[idx], isUploading: val };
+                                                        return next;
+                                                      });
                                                     }
                                                   )}
                                                   className="hidden"
@@ -2798,7 +2809,7 @@ export default function AdminDashboard() {
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setSliders([...sliders, { image: '', link: '', title: '' }]);
+                                          setSliders(prev => [...prev, { image: '', link: '', title: '' }]);
                                         }}
                                         className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-slate-350 hover:bg-slate-50 text-slate-500 hover:text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                                       >
