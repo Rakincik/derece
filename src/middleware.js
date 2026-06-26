@@ -27,6 +27,13 @@ function decodeJwt(token) {
 export function middleware(request) {
   const { pathname } = request.nextUrl;
   
+  // 1. Canlı ortamda HTTP -> HTTPS yönlendirmesi yapıyoruz (Ters vekil sunucudan gelen protokole göre)
+  const proto = request.headers.get('x-forwarded-proto');
+  if (proto === 'http') {
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    return NextResponse.redirect(`https://${host}${pathname}${request.nextUrl.search}`, 301);
+  }
+  
   // Sadece admin rotasını koruyoruz
   const isAdminRoute = pathname.startsWith('/admin');
   
@@ -56,7 +63,9 @@ export function middleware(request) {
   return NextResponse.next();
 }
 
-// Hangi rotalarda middleware'in çalışacağını belirtiyoruz
+// Hangi rotalarda middleware'in çalışacağını belirtiyoruz (Statik dosyalar hariç tüm yollar)
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|images|scraped|uploads).*)',
+  ],
 };
