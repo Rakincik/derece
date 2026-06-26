@@ -16,9 +16,47 @@ export default async function HomePage() {
 
   try {
     const rawSettings = await prisma.setting.findMany();
-    const dbTestimonials = await prisma.testimonial.findMany({
+    let dbTestimonials = await prisma.testimonial.findMany({
       orderBy: { createdAt: 'desc' }
     });
+
+    if (dbTestimonials.length === 0) {
+      const defaults = [
+        {
+          name: 'Elif Kaya',
+          role: 'YKS Öğrencisi',
+          avatar: 'EK',
+          rating: 5,
+          comment: 'Dereceuzem sayesinde TYT netlerim 40\'tan 85\'e çıktı. Video dersler ve deneme sınavları mükemmel hazırlanmış!'
+        },
+        {
+          name: 'Mehmet Arslan',
+          role: 'KPSS Adayı',
+          avatar: 'MA',
+          rating: 5,
+          comment: 'Dijital kitapların kalitesi çok yüksek. Görsel ve interaktif anlatım sayesinde konuları çok kolay kavrıyorum.'
+        },
+        {
+          name: 'Zeynep Demir',
+          role: 'Lise Öğrencisi',
+          avatar: 'ZD',
+          rating: 5,
+          comment: 'Kombo paketler çok avantajlı! Hem kitap hem video hem deneme bir arada. Ayrı almaya gerek kalmadı.'
+        }
+      ];
+
+      try {
+        await prisma.testimonial.createMany({
+          data: defaults
+        });
+        dbTestimonials = await prisma.testimonial.findMany({
+          orderBy: { createdAt: 'desc' }
+        });
+      } catch (seedErr) {
+        console.error('Testimonials auto-seed failed:', seedErr);
+      }
+    }
+
     const dbProducts = await prisma.product.findMany({
       include: { category: true },
       orderBy: { createdAt: 'desc' }

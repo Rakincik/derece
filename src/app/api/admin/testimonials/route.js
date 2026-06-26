@@ -22,9 +22,43 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
     }
 
-    const testimonials = await prisma.testimonial.findMany({
+    let testimonials = await prisma.testimonial.findMany({
       orderBy: { createdAt: 'desc' }
     });
+
+    if (testimonials.length === 0) {
+      const defaults = [
+        {
+          name: 'Elif Kaya',
+          role: 'YKS Öğrencisi',
+          avatar: 'EK',
+          rating: 5,
+          comment: 'Dereceuzem sayesinde TYT netlerim 40\'tan 85\'e çıktı. Video dersler ve deneme sınavları mükemmel hazırlanmış!'
+        },
+        {
+          name: 'Mehmet Arslan',
+          role: 'KPSS Adayı',
+          avatar: 'MA',
+          rating: 5,
+          comment: 'Dijital kitapların kalitesi çok yüksek. Görsel ve interaktif anlatım sayesinde konuları çok kolay kavrıyorum.'
+        },
+        {
+          name: 'Zeynep Demir',
+          role: 'Lise Öğrencisi',
+          avatar: 'ZD',
+          rating: 5,
+          comment: 'Kombo paketler çok avantajlı! Hem kitap hem video hem deneme bir arada. Ayrı almaya gerek kalmadı.'
+        }
+      ];
+
+      await prisma.testimonial.createMany({
+        data: defaults
+      });
+
+      testimonials = await prisma.testimonial.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+    }
 
     return NextResponse.json({ testimonials });
   } catch (error) {

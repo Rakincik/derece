@@ -152,9 +152,7 @@ export default function Footer() {
           <p className="text-xs text-slate-500">
             © {currentYear} Dereceuzem. Tüm hakları saklıdır.
           </p>
-          <p className="text-xs text-slate-500 flex items-center gap-1">
-            Eğitim için <Heart className="w-3 h-3 text-red-400 fill-red-400" /> ile yapıldı
-          </p>
+
         </div>
       </div>
     </footer>

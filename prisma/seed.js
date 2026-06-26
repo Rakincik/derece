@@ -242,6 +242,96 @@ async function main() {
     });
   }
   console.log('Products seeded successfully.');
+
+  console.log('Seeding testimonials...');
+  const mockTestimonials = [
+    {
+      name: 'Elif Kaya',
+      role: 'YKS Öğrencisi',
+      avatar: 'EK',
+      rating: 5,
+      comment: 'Dereceuzem sayesinde TYT netlerim 40\'tan 85\'e çıktı. Video dersler ve deneme sınavları mükemmel hazırlanmış!'
+    },
+    {
+      name: 'Mehmet Arslan',
+      role: 'KPSS Adayı',
+      avatar: 'MA',
+      rating: 5,
+      comment: 'Dijital kitapların kalitesi çok yüksek. Görsel ve interaktif anlatım sayesinde konuları çok kolay kavrıyorum.'
+    },
+    {
+      name: 'Zeynep Demir',
+      role: 'Lise Öğrencisi',
+      avatar: 'ZD',
+      rating: 5,
+      comment: 'Kombo paketler çok avantajlı! Hem kitap hem video hem deneme bir arada. Ayrı almaya gerek kalmadı.'
+    }
+  ];
+
+  for (const test of mockTestimonials) {
+    const existing = await prisma.testimonial.findFirst({
+      where: { name: test.name, comment: test.comment }
+    });
+    if (!existing) {
+      await prisma.testimonial.create({ data: test });
+    }
+  }
+  console.log('Testimonials seeded.');
+
+  console.log('Seeding settings...');
+  const defaultSettings = {
+    hero_title: 'Başarıya Giden Yolda **Dijital Eğitim** Platformu',
+    hero_subtitle: 'Yeni nesil dijital kitaplar, yüksek kaliteli video dersler ve Türkiye geneli online denemeler ile hedeflerine bir adım daha yaklaş.',
+    hero_btn1_text: 'Ürünleri Keşfet',
+    hero_btn1_link: '/urunler',
+    hero_btn2_text: 'Kombo Paketler',
+    hero_btn2_link: '/urunler?category=kombo',
+    
+    hero_card1_title: 'Dijital Kitaplar',
+    hero_card1_subtitle: 'Zengin Konu Anlatımlı PDF Setleri',
+    hero_card1_image: '/covers/kitap.png',
+    hero_card1_link: '/urunler?category=kitap',
+
+    hero_card2_title: 'Video Ders Setleri',
+    hero_card2_subtitle: 'Yüksek Çözünürlüklü Konu Anlatımları',
+    hero_card2_image: '/covers/video.png',
+    hero_card2_badge: 'Çok Satan',
+    hero_card2_link: '/urunler?category=video',
+
+    hero_card3_title: 'Online Denemeler',
+    hero_card3_subtitle: 'Türkiye Geneli Derece Analizleri',
+    hero_card3_image: '/covers/deneme.png',
+    hero_card3_link: '/urunler?category=deneme',
+
+    campaign_title: "Kombo Paketlerde %40'a Varan İndirim!",
+    campaign_subtitle: "Kitap + Video + Deneme paketlerini birlikte al, ekstra indirim kazan. Bu fırsat kaçmaz!",
+    campaign_btn_text: "Kampanyayı Gör",
+    campaign_btn_link: "/urunler?category=kombo",
+    campaign_hours: "48",
+
+    about_title: 'Geleceğin Eğitim Standartlarını Bugün Keşfedin',
+    about_subtitle: 'Dereceuzem olarak, adayların hedeflerine en verimli şekilde ulaşabilmeleri için modern dijital öğrenme araçları geliştiriyoruz.',
+    about_mission_title: 'Misyonumuz',
+    about_mission_text: 'Her adayın ihtiyacına özel, güncel müfredatla %100 uyumlu, yüksek kaliteli eğitim materyallerini en erişilebilir şekilde sunmak.',
+    about_vision_title: 'Vizyonumuz',
+    about_vision_text: 'Türkiye genelinde dijital eğitim denildiğinde ilk akla gelen, yenilikçi ve derece odaklı lider eğitim platformu olmak.',
+    about_image: '/logo.png',
+
+    stats: JSON.stringify([
+      { label: 'Aktif Öğrenci', value: 15000, suffix: '+' },
+      { label: 'Dijital Kitap', value: 50, suffix: '+' },
+      { label: 'Ders Videosu', value: 1200, suffix: '+' }
+    ])
+  };
+
+  for (const [key, value] of Object.entries(defaultSettings)) {
+    await prisma.setting.upsert({
+      where: { key },
+      update: {},
+      create: { key, value }
+    });
+  }
+  console.log('Settings seeded successfully.');
 }
 
 main()
