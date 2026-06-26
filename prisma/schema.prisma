@@ -1,0 +1,120 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // pbkdf2 hash value
+  salt      String   // pbkdf2 salt value
+  name      String?
+  role      String   @default("STUDENT") // STUDENT or ADMIN
+  phone     String?
+  city      String?
+  district  String?
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  title           String
+  slug            String   @unique
+  price           Float
+  discountedPrice Float?
+  isFeatured      Boolean  @default(false)
+  isBestseller    Boolean  @default(false)
+  type            String   // Video Ders Seti, Dijital Kitap, Deneme Sınavı Paketi, Kombo Paket
+  coverImage      String
+  description     String   @db.Text
+  contents        String[] // PostgreSQL Native String array
+  outcomes        String[] // PostgreSQL Native String array
+  pages           Int?
+  videoCount      Int?
+  duration        String?
+  examCount       Int?
+  showDemo        Boolean  @default(true)
+  demoUrl         String?
+  showFaq         Boolean  @default(true)
+  faqs            Json?
+  showOutcomes    Boolean  @default(true)
+  showInstructor        Boolean  @default(true)
+  instructorName        String   @default("Uzman Eğitmen Kadrosu")
+  instructorExperience  String   @default("10+ Yıl Deneyim")
+  instructorDescription String   @default("DereceUzem eğitmenleri, alanında uzman, binlerce öğrencinin derece yapmasına rehberlik etmiş tecrübeli öğretmenlerden oluşur. Müfredata tam hakimiyet ve yeni nesil soru tarzlarına yönelik özel taktiklerle dersleri işlerler. Video içeriklerimizde konular akılda kalıcı yöntemlerle ve sınav odaklı püf noktalarıyla aktarılır.") @db.Text
+  instructorAvatar      String   @default("E")
+  instructorImage       String?
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  orders          Order[]
+}
+
+model Order {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  amount        Float
+  paymentStatus String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  paymentId     String?
+  createdAt     DateTime @default(now())
+}
+
+model Coupon {
+  id            String    @id @default(uuid())
+  code          String    @unique // E.g. YKS2026, LIMIT20
+  discountType  String    // PERCENTAGE or FIXED
+  discountValue Float
+  maxUses       Int       @default(100)
+  uses          Int       @default(0)
+  expiryDate    DateTime?
+  productIds    String[]  @default([])
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  subject   String?
+  message   String   @db.Text
+  status    String   @default("UNREAD") // UNREAD, READ, RESOLVED
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?   @db.Text
+  icon        String    @default("BookOpen")
+  color       String    @default("from-blue-500 to-indigo-600")
+  sortOrder   Int       @default(0)
+  showInNavbar Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String @db.Text
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  avatar    String
+  rating    Int
+  comment   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
