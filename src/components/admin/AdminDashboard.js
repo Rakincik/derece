@@ -11,6 +11,7 @@ import {
   LayoutGrid, List
 } from 'lucide-react';
 import Link from 'next/link';
+import { turkeyCities } from '@/data/turkeyDb';
 
 export default function AdminDashboard() {
   // Data lists
@@ -194,6 +195,17 @@ export default function AdminDashboard() {
   const [modalError, setModalError] = useState('');
   const [modalSuccess, setModalSuccess] = useState('');
 
+  // User Form states
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [userFormName, setUserFormName] = useState('');
+  const [userFormEmail, setUserFormEmail] = useState('');
+  const [userFormPassword, setUserFormPassword] = useState('');
+  const [userFormPhone, setUserFormPhone] = useState('');
+  const [userFormCity, setUserFormCity] = useState('');
+  const [userFormDistrict, setUserFormDistrict] = useState('');
+  const [userFormRole, setUserFormRole] = useState('STUDENT');
+  const [isUserSubmitting, setIsUserSubmitting] = useState(false);
+
   useEffect(() => {
     fetchData();
     fetchCurrentAdmin();
@@ -218,7 +230,7 @@ export default function AdminDashboard() {
   }, [error]);
 
   useEffect(() => {
-    if (isModalOpen || isCouponModalOpen || isMobileSidebarOpen || isCategoryModalOpen || isTestimonialModalOpen || selectedUser) {
+    if (isModalOpen || isCouponModalOpen || isMobileSidebarOpen || isCategoryModalOpen || isTestimonialModalOpen || selectedUser || isUserModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -226,7 +238,7 @@ export default function AdminDashboard() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isModalOpen, isCouponModalOpen, isMobileSidebarOpen, isCategoryModalOpen, isTestimonialModalOpen, selectedUser]);
+  }, [isModalOpen, isCouponModalOpen, isMobileSidebarOpen, isCategoryModalOpen, isTestimonialModalOpen, selectedUser, isUserModalOpen]);
 
   const fetchCurrentAdmin = async () => {
     try {
@@ -251,6 +263,55 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Çıkış hatası:', err);
       setError('Sistem hatası nedeniyle çıkış yapılamadı.');
+    }
+  };
+
+  const handleOpenAddUserModal = () => {
+    setUserFormName('');
+    setUserFormEmail('');
+    setUserFormPassword('');
+    setUserFormPhone('');
+    setUserFormCity('');
+    setUserFormDistrict('');
+    setUserFormRole('STUDENT');
+    setIsUserModalOpen(true);
+  };
+
+  const handleUserSubmit = async (e) => {
+    e.preventDefault();
+    setIsUserSubmitting(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: userFormName,
+          email: userFormEmail,
+          password: userFormPassword,
+          phone: userFormPhone,
+          city: userFormCity,
+          district: userFormDistrict,
+          role: userFormRole,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSuccess('Kullanıcı başarıyla oluşturuldu.');
+        setIsUserModalOpen(false);
+        fetchData();
+      } else {
+        setError(data.error || 'Kullanıcı oluşturulurken bir hata oluştu.');
+      }
+    } catch (err) {
+      console.error('Kullanıcı ekleme hatası:', err);
+      setError('Sistem hatası nedeniyle kullanıcı eklenemedi.');
+    } finally {
+      setIsUserSubmitting(false);
     }
   };
 
@@ -1393,6 +1454,15 @@ export default function AdminDashboard() {
                 Kupon
               </button>
             )}
+            {activeSection === 'users' && (
+              <button 
+                onClick={handleOpenAddUserModal}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white shadow-sm hover:bg-amber-600 transition-all"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                Öğrenci
+              </button>
+            )}
           </div>
         </div>
 
@@ -1452,6 +1522,15 @@ export default function AdminDashboard() {
                   >
                     <Gift className="w-4 h-4" />
                     Yeni Kupon Ekle
+                  </button>
+                )}
+                {activeSection === 'users' && (
+                  <button 
+                    onClick={handleOpenAddUserModal}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-white hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/15 transition-all hover:-translate-y-0.5"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    Yeni Öğrenci Ekle
                   </button>
                 )}
               </div>
@@ -4823,6 +4902,148 @@ export default function AdminDashboard() {
             </div>
           );
         })()}
+      </AnimatePresence>
+
+      {/* Modal - Add User */}
+      <AnimatePresence>
+        {isUserModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-955/60 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 shrink-0 bg-white">
+                <h3 className="text-lg font-black text-slate-900 font-bold">Yeni Öğrenci Kaydet</h3>
+                <button 
+                  onClick={() => setIsUserModalOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-655 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Form Content */}
+              <form onSubmit={handleUserSubmit} className="p-6 space-y-4 bg-white overflow-y-auto max-h-[80vh]">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-1.5 pl-1">Ad Soyad</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={userFormName}
+                    onChange={(e) => setUserFormName(e.target.value)}
+                    placeholder="Örn: Ahmet Yılmaz"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-1.5 pl-1">E-Posta Adresi</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={userFormEmail}
+                    onChange={(e) => setUserFormEmail(e.target.value)}
+                    placeholder="Örn: ahmet@gmail.com"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-1.5 pl-1">Şifre</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={userFormPassword}
+                    onChange={(e) => setUserFormPassword(e.target.value)}
+                    placeholder="En az 6 karakter"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-1.5 pl-1">Telefon Numarası</label>
+                  <input 
+                    type="tel" 
+                    required
+                    value={userFormPhone}
+                    onChange={(e) => setUserFormPhone(e.target.value)}
+                    placeholder="Örn: 05551234567"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-1.5 pl-1">İl</label>
+                    <select
+                      required
+                      value={userFormCity}
+                      onChange={(e) => {
+                        setUserFormCity(e.target.value);
+                        setUserFormDistrict('');
+                      }}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold cursor-pointer"
+                    >
+                      <option value="">İl Seçin</option>
+                      {Object.keys(turkeyCities).sort((a, b) => a.localeCompare(b, 'tr')).map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-1.5 pl-1">İlçe</label>
+                    <select
+                      required
+                      disabled={!userFormCity}
+                      value={userFormDistrict}
+                      onChange={(e) => setUserFormDistrict(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold cursor-pointer disabled:opacity-50"
+                    >
+                      <option value="">İlçe Seçin</option>
+                      {userFormCity && turkeyCities[userFormCity].map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-1.5 pl-1">Rol / Yetki</label>
+                  <select 
+                    value={userFormRole}
+                    onChange={(e) => setUserFormRole(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold"
+                  >
+                    <option value="STUDENT">Öğrenci</option>
+                    <option value="ADMIN">Yönetici (Admin)</option>
+                  </select>
+                </div>
+
+                <div className="pt-4 flex gap-3 shrink-0">
+                  <button 
+                    type="button"
+                    onClick={() => setIsUserModalOpen(false)}
+                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all"
+                  >
+                    Vazgeç
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isUserSubmitting}
+                    className="flex-1 py-3.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-amber-500/10 flex items-center justify-center gap-1.5"
+                  >
+                    {isUserSubmitting && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                    Kaydet
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
