@@ -171,6 +171,11 @@ export default function AdminDashboard() {
   const [showAbout, setShowAbout] = useState(true);
   const [showTestimonials, setShowTestimonials] = useState(true);
 
+  // Homepage section order state
+  const [sectionOrder, setSectionOrder] = useState([
+    'hero', 'bento', 'products', 'campaign', 'stats', 'about', 'testimonials', 'badges'
+  ]);
+
   // Homepage custom states
   const [activeHomeTab, setActiveHomeTab] = useState('hero');
   const [isUploadingCard1, setIsUploadingCard1] = useState(false);
@@ -275,6 +280,14 @@ export default function AdminDashboard() {
         setShowStats(s.show_stats === undefined ? true : s.show_stats === 'true');
         setShowAbout(s.show_about === undefined ? true : s.show_about === 'true');
         setShowTestimonials(s.show_testimonials === undefined ? true : s.show_testimonials === 'true');
+
+        if (s.homepage_section_order) {
+          try {
+            setSectionOrder(JSON.parse(s.homepage_section_order));
+          } catch (e) {
+            console.error('Sıralama parse hatası:', e);
+          }
+        }
 
         // Initialize form states
         setHeroTitle(s.hero_title || '');
@@ -998,7 +1011,8 @@ export default function AdminDashboard() {
         show_campaign: showCampaign.toString(),
         show_stats: showStats.toString(),
         show_about: showAbout.toString(),
-        show_testimonials: showTestimonials.toString()
+        show_testimonials: showTestimonials.toString(),
+        homepage_section_order: JSON.stringify(sectionOrder)
       }
     };
 
@@ -2385,7 +2399,8 @@ export default function AdminDashboard() {
                               { id: 'campaign', label: 'Fırsat Bannerı', icon: PlayCircle },
                               { id: 'stats', label: 'İstatistikler', icon: CheckSquare },
                               { id: 'about', label: 'Hakkımızda', icon: BookOpen },
-                              { id: 'testimonials', label: 'Yorumlar', icon: MessageSquare }
+                              { id: 'testimonials', label: 'Yorumlar', icon: MessageSquare },
+                              { id: 'ordering', label: 'Bölüm Sıralaması', icon: List }
                             ].map((tab) => {
                               const TabIcon = tab.icon;
                               const isTabActive = activeHomeTab === tab.id;
@@ -2907,6 +2922,82 @@ export default function AdminDashboard() {
                                         </label>
                                       </div>
                                     </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {activeHomeTab === 'ordering' && (
+                                <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-5">
+                                  <div className="space-y-1 pb-2 border-b">
+                                    <h3 className="text-md font-bold text-slate-900">Ana Sayfa Bölüm Sıralaması</h3>
+                                    <p className="text-xs text-slate-400 font-semibold">Ana sayfadaki bölümlerin gösterim sırasını yukarı/aşağı okları kullanarak düzenleyin.</p>
+                                  </div>
+                                  <div className="space-y-3">
+                                    {sectionOrder.map((section, index) => {
+                                      const sectionNames = {
+                                        hero: { name: 'Giriş (Hero) Bölümü', desc: 'Ana sayfa giriş başlığı, açıklaması ve ana butonları' },
+                                        bento: { name: 'Bento Kategori Kartları', desc: 'Dijital Kitap, Video Ders ve Deneme Paketleri bento grid yapısı' },
+                                        products: { name: 'Öne Çıkan Eğitim Paketleri', desc: 'Arama, filtreleme ve sıralama özellikli ürün listesi' },
+                                        campaign: { name: 'Fırsat (Kampanya) Bannerı', desc: 'Geri sayım sayaçlı indirim bannerı' },
+                                        stats: { name: 'İstatistik Sayaçları', desc: 'Aktif Öğrenci, Dijital Kitap ve Ders Videosu sayaçları' },
+                                        about: { name: 'Hakkımızda Özeti', desc: 'Misyon, vizyon ve kurumsal tanıtım bloğu' },
+                                        testimonials: { name: 'Öğrenci Yorumları', desc: 'Öğrencilerden gelen geri bildirim kartları' },
+                                        badges: { name: 'Güvenilirlik Rozetleri', desc: 'Sitenin alt kısmında yer alan rozet logoları' }
+                                      };
+
+                                      const sec = sectionNames[section] || { name: section, desc: '' };
+
+                                      return (
+                                        <div 
+                                          key={section}
+                                          className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:border-slate-200/80 transition-colors"
+                                        >
+                                          <div className="space-y-0.5">
+                                            <span className="text-xs font-bold text-slate-400 mr-2">0{index + 1}</span>
+                                            <span className="text-sm font-bold text-slate-800">{sec.name}</span>
+                                            <p className="text-[11px] text-slate-400 font-medium">{sec.desc}</p>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              disabled={index === 0}
+                                              onClick={() => {
+                                                const newOrder = [...sectionOrder];
+                                                const temp = newOrder[index];
+                                                newOrder[index] = newOrder[index - 1];
+                                                newOrder[index - 1] = temp;
+                                                setSectionOrder(newOrder);
+                                              }}
+                                              className={`p-2 rounded-xl border transition-colors ${
+                                                index === 0
+                                                  ? 'bg-slate-100 border-slate-100 text-slate-350 cursor-not-allowed'
+                                                  : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
+                                              }`}
+                                            >
+                                              <ArrowUp className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              disabled={index === sectionOrder.length - 1}
+                                              onClick={() => {
+                                                const newOrder = [...sectionOrder];
+                                                const temp = newOrder[index];
+                                                newOrder[index] = newOrder[index + 1];
+                                                newOrder[index + 1] = temp;
+                                                setSectionOrder(newOrder);
+                                              }}
+                                              className={`p-2 rounded-xl border transition-colors ${
+                                                index === sectionOrder.length - 1
+                                                  ? 'bg-slate-100 border-slate-100 text-slate-350 cursor-not-allowed'
+                                                  : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
+                                              }`}
+                                            >
+                                              <ArrowDown className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}

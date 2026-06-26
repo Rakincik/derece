@@ -80,15 +80,38 @@ export default async function HomePage() {
   const showStats = settings.show_stats === undefined ? true : settings.show_stats === 'true';
   const showTestimonials = settings.show_testimonials === undefined ? true : settings.show_testimonials === 'true';
 
+  const defaultOrder = ['hero', 'bento', 'products', 'campaign', 'stats', 'testimonials', 'badges'];
+  let sectionOrder = defaultOrder;
+  if (settings.homepage_section_order) {
+    try {
+      sectionOrder = JSON.parse(settings.homepage_section_order);
+    } catch (e) {
+      sectionOrder = defaultOrder;
+    }
+  }
+
   return (
     <>
-      {showHero && <HeroSection settings={settings} />}
-      {showBento && <Categories />}
-      <FeaturedProducts initialProducts={products} />
-      {showCampaign && <CampaignBanner settings={settings} />}
-      {showStats && <StatsCounter settings={settings} />}
-      {showTestimonials && <Testimonials testimonials={testimonials} />}
-      <TrustBadges />
+      {sectionOrder.map((section) => {
+        switch (section) {
+          case 'hero':
+            return showHero ? <HeroSection key="hero" settings={settings} /> : null;
+          case 'bento':
+            return showBento ? <Categories key="bento" /> : null;
+          case 'products':
+            return <FeaturedProducts key="products" initialProducts={products} />;
+          case 'campaign':
+            return showCampaign ? <CampaignBanner key="campaign" settings={settings} /> : null;
+          case 'stats':
+            return showStats ? <StatsCounter key="stats" settings={settings} /> : null;
+          case 'testimonials':
+            return showTestimonials ? <Testimonials key="testimonials" testimonials={testimonials} /> : null;
+          case 'badges':
+            return <TrustBadges key="badges" />;
+          default:
+            return null;
+        }
+      })}
     </>
   );
 }
