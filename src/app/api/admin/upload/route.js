@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, chmod } from 'fs/promises';
 import path from 'path';
 import { verifyToken } from '@/lib/auth';
 
@@ -48,6 +48,9 @@ export async function POST(request) {
 
     // Dosyayı diske yazıyoruz
     await writeFile(filePath, buffer);
+    
+    // Web sunucusunun okuyabilmesi için izinleri 644 (okunabilir) yapıyoruz
+    await chmod(filePath, 0o644);
 
     // Sitenin erişebileceği public url
     const fileUrl = `/uploads/${filename}`;
