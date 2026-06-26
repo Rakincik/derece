@@ -352,36 +352,36 @@ export default function CartDrawer() {
       {/* Glassmorphic Checkout Modal */}
       <AnimatePresence>
         {isCheckoutModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-slate-900/40 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm bg-slate-900 border border-slate-800 p-4 sm:p-5 rounded-[1.5rem] shadow-2xl relative text-slate-100 flex flex-col gap-3 sm:gap-4 max-h-[calc(100vh-2rem)]"
+              className="w-full max-w-sm bg-white border border-slate-200 p-4 sm:p-5 rounded-[1.5rem] shadow-2xl relative text-slate-800 flex flex-col gap-3 sm:gap-4 max-h-[calc(100vh-2rem)]"
             >
               {/* Close Button */}
               <button
                 onClick={() => setIsCheckoutModalOpen(false)}
-                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors z-20"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors z-20"
               >
                 <X className="w-5 h-5" />
               </button>
 
               {/* Modal Header */}
               <div className="pr-8">
-                <h3 className="text-sm sm:text-base font-black text-white">Güvenli Kredi / Banka Kartı Ödemesi</h3>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight">Param POS altyapısı ile 3D Secure güvencesiyle ödeyin.</p>
+                <h3 className="text-sm sm:text-base font-black text-slate-900">Güvenli Kredi / Banka Kartı Ödemesi</h3>
+                <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 leading-tight">Param POS altyapısı ile 3D Secure güvencesiyle ödeyin.</p>
               </div>
 
               {/* Scrollable Modal Content */}
               <div className="flex-1 overflow-y-auto pr-1 -mr-2 custom-scrollbar space-y-3 sm:space-y-4">
                 {checkoutSuccess ? (
                   <div className="py-6 text-center flex flex-col items-center justify-center gap-3">
-                    <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center animate-bounce">
+                    <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-500 flex items-center justify-center animate-bounce">
                       <Check className="w-7 h-7" strokeWidth={3} />
                     </div>
-                    <h4 className="text-base font-bold text-emerald-400">Ödeme Başarılı!</h4>
-                    <p className="text-xs text-slate-400">Eğitimleriniz hesabınıza tanımlandı. Yönlendiriliyorsunuz...</p>
+                    <h4 className="text-base font-bold text-emerald-500">Ödeme Başarılı!</h4>
+                    <p className="text-xs text-slate-500">Eğitimleriniz hesabınıza tanımlandı. Yönlendiriliyorsunuz...</p>
                   </div>
                 ) : (
                   <form onSubmit={handleProcessCheckout} className="space-y-3 sm:space-y-4">
@@ -433,7 +433,7 @@ export default function CartDrawer() {
 
                     {/* Error Message */}
                     {checkoutError && (
-                      <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-bold flex items-center gap-2">
+                      <div className="p-3 bg-red-50 border border-red-100 text-red-650 rounded-xl text-xs font-bold flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>{checkoutError}</span>
                       </div>
@@ -449,7 +449,7 @@ export default function CartDrawer() {
                           value={cardHolder}
                           onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
                           placeholder="AHMET YILMAZ"
-                          className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-950 border border-slate-850 focus:border-indigo-500 rounded-xl text-white font-medium placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-xs sm:text-sm"
+                          className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500/40 rounded-xl text-slate-850 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/5 transition-all text-xs sm:text-sm"
                         />
                       </div>
                       <div>
@@ -466,7 +466,7 @@ export default function CartDrawer() {
                             setCardNumber(formatted);
                           }}
                           placeholder="4000 1234 5678 9010"
-                          className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-950 border border-slate-850 focus:border-indigo-500 rounded-xl text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-xs sm:text-sm"
+                          className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500/40 rounded-xl text-slate-850 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/5 transition-all text-xs sm:text-sm"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -497,7 +497,7 @@ export default function CartDrawer() {
                               }
                             }}
                             placeholder="12/28"
-                            className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-950 border border-slate-850 focus:border-indigo-500 rounded-xl text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-xs sm:text-sm"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500/40 rounded-xl text-slate-850 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/5 transition-all text-xs sm:text-sm"
                           />
                         </div>
                         <div>
@@ -509,7 +509,7 @@ export default function CartDrawer() {
                             value={cardCvv}
                             onChange={(e) => setCardCvv(e.target.value.replace(/[^0-9]/g, ''))}
                             placeholder="123"
-                            className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-950 border border-slate-850 focus:border-indigo-500 rounded-xl text-white font-mono placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-xs sm:text-sm"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500/40 rounded-xl text-slate-850 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/5 transition-all text-xs sm:text-sm"
                           />
                         </div>
                       </div>
@@ -517,8 +517,8 @@ export default function CartDrawer() {
 
                     {/* Installment Options Grid */}
                     {isCheckingBin && (
-                      <div className="py-3 text-center text-xs text-slate-400 flex items-center justify-center gap-2 bg-slate-950/50 rounded-xl border border-slate-800">
-                        <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      <div className="py-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2 bg-slate-50 rounded-xl border border-slate-200">
+                        <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                         <span>Taksit seçenekleri sorgulanıyor...</span>
                       </div>
                     )}
@@ -526,14 +526,14 @@ export default function CartDrawer() {
                     {!isCheckingBin && installments.length > 0 && (
                       <div className="space-y-1.5 sm:space-y-2">
                         <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">TAKSİT SEÇENEKLERİ</label>
-                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 divide-y divide-slate-800/60 text-[11px] sm:text-xs max-h-[140px] overflow-y-auto custom-scrollbar">
+                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 divide-y divide-slate-200 text-[11px] sm:text-xs max-h-[100px] overflow-y-auto custom-scrollbar">
                           {installments.map((inst) => (
                             <label
                               key={inst.count}
-                              className={`flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2 cursor-pointer transition-colors ${
+                              className={`flex items-center justify-between px-3 sm:px-4 py-1 sm:py-1.5 cursor-pointer transition-colors ${
                                 selectedInstallment?.count === inst.count
-                                  ? 'bg-indigo-500/10 text-white font-semibold'
-                                  : 'text-slate-300 hover:bg-slate-900'
+                                  ? 'bg-amber-500/10 text-slate-900 font-semibold'
+                                  : 'text-slate-650 hover:bg-slate-100'
                               }`}
                             >
                               <div className="flex items-center gap-2 sm:gap-3">
@@ -542,24 +542,19 @@ export default function CartDrawer() {
                                   name="installment"
                                   checked={selectedInstallment?.count === inst.count}
                                   onChange={() => setSelectedInstallment(inst)}
-                                  className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-600 border-slate-700 bg-slate-900 focus:ring-indigo-500"
+                                  className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 border-slate-300 bg-white focus:ring-amber-500/30"
                                 />
-                                <span>
+                                <span className="font-semibold text-slate-700">
                                   {inst.count === 1 ? 'Tek Çekim' : `${inst.count} Taksit`}
                                 </span>
                               </div>
                               <div className="text-right font-mono">
-                                <div className="font-bold text-slate-200">
+                                <div className="font-bold text-slate-900">
                                   {inst.count === 1 
                                     ? `₺${inst.total.toFixed(2)}` 
                                     : `${inst.count} x ₺${inst.monthlyPayment.toFixed(2)}`
                                   }
                                 </div>
-                                {inst.count > 1 && inst.rate > 0 && (
-                                  <div className="text-[8px] sm:text-[9px] text-slate-500">
-                                    Toplam: ₺{inst.total.toFixed(2)} (%{inst.rate.toFixed(2)} komisyon)
-                                  </div>
-                                )}
                               </div>
                             </label>
                           ))}
@@ -568,17 +563,17 @@ export default function CartDrawer() {
                     )}
 
                     {/* Total & Submit */}
-                    <div className="border-t border-slate-800 pt-2.5 sm:pt-3 mt-2 sm:mt-3 flex items-center justify-between">
+                    <div className="border-t border-slate-100 pt-2.5 sm:pt-3 mt-2 sm:mt-3 flex items-center justify-between">
                       <div>
-                        <span className="text-[9px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider block">TOPLAM TUTAR</span>
-                        <span className="text-base sm:text-lg font-mono font-black text-indigo-400">
+                        <span className="text-[9px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider block">TOPLAM TUTAR</span>
+                        <span className="text-base sm:text-lg font-mono font-black text-amber-500">
                           ₺{selectedInstallment ? selectedInstallment.total.toFixed(2) : getTotal().toFixed(2)}
                         </span>
                       </div>
                       <button
                         type="submit"
                         disabled={isProcessing}
-                        className="px-4 sm:px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white transition-all hover:shadow-lg hover:shadow-indigo-500/20 disabled:opacity-50 text-xs sm:text-sm"
+                        className="px-4 sm:px-5 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-md shadow-amber-500/10 disabled:opacity-50 text-xs sm:text-sm"
                       >
                         {isProcessing ? 'İşlem yapılıyor...' : 'Ödemeyi Tamamla'}
                       </button>
