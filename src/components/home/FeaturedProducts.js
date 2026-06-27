@@ -14,7 +14,7 @@ export default function FeaturedProducts({ initialProducts }) {
 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPriceRange, setSelectedPriceRange] = useState(0);
-  const [sortBy, setSortBy] = useState('popular');
+  const [sortBy, setSortBy] = useState('recommended');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   useEffect(() => {
@@ -66,6 +66,9 @@ export default function FeaturedProducts({ initialProducts }) {
 
     // Sort
     switch (sortBy) {
+      case 'recommended':
+        filtered.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        break;
       case 'newest':
         filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
         break;

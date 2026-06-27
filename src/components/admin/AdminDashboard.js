@@ -1,17 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, Users, DollarSign, PlusCircle, Edit3, Trash2, 
   X, Check, AlertCircle, ShoppingBag, Send, BookOpen, Layers, 
-  PlayCircle, HelpCircle, Mail, Key, Gift, Eye, MessageSquare, CheckSquare, Trash, Clock, Menu, ChevronDown, ArrowUp, ArrowDown,
+  PlayCircle, Play, FileCheck, HelpCircle, Mail, Key, Gift, Eye, MessageSquare, CheckSquare, Trash, Clock, Menu, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown,
   Layout, Star, LogOut,
   GraduationCap, Award, Calculator, Compass, Languages, Cpu, Sparkles, PenTool, History, FlaskConical, Globe,
   LayoutGrid, List
 } from 'lucide-react';
 import Link from 'next/link';
 import { turkeyCities } from '@/data/turkeyDb';
+import AdminDropdown from './shared/AdminDropdown';
+import ConfirmModal from './shared/ConfirmModal';
+import SupportMessagesTab from './tabs/SupportMessagesTab';
+import CouponsTab from './tabs/CouponsTab';
+import CategoriesTab from './tabs/CategoriesTab';
+import OrdersTab from './tabs/OrdersTab';
+import StudentsTab from './tabs/StudentsTab';
+import ProductFormModal from './modals/ProductFormModal';
 
 export default function AdminDashboard() {
   // Data lists
@@ -106,6 +114,28 @@ export default function AdminDashboard() {
   const [categoryDescription, setCategoryDescription] = useState('');
   const [categoryIcon, setCategoryIcon] = useState('BookOpen');
   const [categoryColor, setCategoryColor] = useState('from-blue-500 to-indigo-600');
+  const [isCategoryIconOpen, setIsCategoryIconOpen] = useState(false);
+  const [isCategoryColorOpen, setIsCategoryColorOpen] = useState(false);
+  const [isTestimonialRatingOpen, setIsTestimonialRatingOpen] = useState(false);
+  const iconDropdownRef = useRef(null);
+  const colorDropdownRef = useRef(null);
+  const ratingDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (iconDropdownRef.current && !iconDropdownRef.current.contains(event.target)) {
+        setIsCategoryIconOpen(false);
+      }
+      if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target)) {
+        setIsCategoryColorOpen(false);
+      }
+      if (ratingDropdownRef.current && !ratingDropdownRef.current.contains(event.target)) {
+        setIsTestimonialRatingOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [categorySortOrder, setCategorySortOrder] = useState('0');
   const [categoryShowInNavbar, setCategoryShowInNavbar] = useState(true);
 
@@ -1701,7 +1731,7 @@ export default function AdminDashboard() {
             {/* Global Search Bar (Only shown for lists: orders, users, coupons, messages) */}
             {activeSection !== 'grant' && activeSection !== 'products' && (
               <div className="mb-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-                <div className="relative flex-1 max-w-md">
+                <div className="relative flex-1 min-w-[240px] md:min-w-[320px] max-w-md">
                   <input
                     type="text"
                     value={searchQuery}
@@ -1727,100 +1757,73 @@ export default function AdminDashboard() {
                 {activeSection === 'orders' && (
                   <div className="flex flex-wrap gap-3 items-center">
                     {/* Product Filter */}
-                    <div className="relative">
-                      <select
-                        value={orderFilterProduct}
-                        onChange={(e) => setOrderFilterProduct(e.target.value)}
-                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
-                      >
-                        <option value="">Eğitim: Tümü</option>
-                        {products.map(p => (
-                          <option key={p.id} value={p.id}>{p.title}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+                    <AdminDropdown
+                      value={orderFilterProduct}
+                      onChange={setOrderFilterProduct}
+                      placeholder="Eğitim: Tümü"
+                      className="w-[185px]"
+                      options={[
+                        { value: '', label: 'Eğitim: Tümü' },
+                        ...products.map(p => ({ value: p.id, label: p.title }))
+                      ]}
+                    />
 
                     {/* Status Filter */}
-                    <div className="relative">
-                      <select
-                        value={orderFilterStatus}
-                        onChange={(e) => setOrderFilterStatus(e.target.value)}
-                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
-                      >
-                        <option value="">Ödeme Durumu: Tümü</option>
-                        <option value="SUCCESS">Başarılı</option>
-                        <option value="FAILED">Başarısız</option>
-                        <option value="PENDING">Bekleyen</option>
-                      </select>
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+                    <AdminDropdown
+                      value={orderFilterStatus}
+                      onChange={setOrderFilterStatus}
+                      placeholder="Ödeme Durumu: Tümü"
+                      className="w-[170px]"
+                      options={[
+                        { value: '', label: 'Ödeme Durumu: Tümü' },
+                        { value: 'SUCCESS', label: 'Başarılı' },
+                        { value: 'FAILED', label: 'Başarısız' },
+                        { value: 'PENDING', label: 'Bekleyen' }
+                      ]}
+                    />
 
                     {/* Sales Type Filter */}
-                    <div className="relative">
-                      <select
-                        value={orderFilterType}
-                        onChange={(e) => setOrderFilterType(e.target.value)}
-                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
-                      >
-                        <option value="">Satış Türü: Tümü</option>
-                        <option value="pos">Sanal POS (Kart)</option>
-                        <option value="manual">Manuel Tanımlama</option>
-                      </select>
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+                    <AdminDropdown
+                      value={orderFilterType}
+                      onChange={setOrderFilterType}
+                      placeholder="Satış Türü: Tümü"
+                      className="w-[160px]"
+                      options={[
+                        { value: '', label: 'Satış Türü: Tümü' },
+                        { value: 'pos', label: 'Sanal POS (Kart)' },
+                        { value: 'manual', label: 'Manuel Tanımlama' }
+                      ]}
+                    />
 
                     {/* Date Range Filter */}
-                    <div className="relative">
-                      <select
-                        value={orderFilterDateRange}
-                        onChange={(e) => setOrderFilterDateRange(e.target.value)}
-                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
-                      >
-                        <option value="">Tarih Aralığı: Tümü</option>
-                        <option value="today">Bugün</option>
-                        <option value="week">Son 7 Gün</option>
-                        <option value="month">Bu Ay</option>
-                      </select>
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+                    <AdminDropdown
+                      value={orderFilterDateRange}
+                      onChange={setOrderFilterDateRange}
+                      placeholder="Tarih Aralığı: Tümü"
+                      className="w-[160px]"
+                      options={[
+                        { value: '', label: 'Tarih Aralığı: Tümü' },
+                        { value: 'today', label: 'Bugün' },
+                        { value: 'week', label: 'Son 7 Gün' },
+                        { value: 'month', label: 'Bu Ay' }
+                      ]}
+                    />
 
                     {/* Sort Options */}
-                    <div className="relative">
-                      <select
-                        value={orderSortBy}
-                        onChange={(e) => setOrderSortBy(e.target.value)}
-                        className="appearance-none pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500/40 transition-colors shadow-sm cursor-pointer"
-                      >
-                        <option value="newest">Tarih: Yeni &gt; Eski</option>
-                        <option value="oldest">Tarih: Eski &gt; Yeni</option>
-                        <option value="amount-desc">Tutar: Azalan</option>
-                        <option value="amount-asc">Tutar: Artan</option>
-                        <option value="name-asc">Öğrenci: A &gt; Z</option>
-                        <option value="name-desc">Öğrenci: Z &gt; A</option>
-                      </select>
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+                    <AdminDropdown
+                      value={orderSortBy}
+                      onChange={setOrderSortBy}
+                      placeholder="Tarih: Yeni > Eski"
+                      className="w-[160px]"
+                      options={[
+                        { value: 'newest', label: 'Tarih: Yeni > Eski' },
+                        { value: 'oldest', label: 'Tarih: Eski > Yeni' },
+                        { value: 'amount-desc', label: 'Tutar: Azalan' },
+                        { value: 'amount-asc', label: 'Tutar: Artan' },
+                        { value: 'name-asc', label: 'Öğrenci: A > Z' },
+                        { value: 'name-desc', label: 'Öğrenci: Z > A' }
+                      ]}
+                    />
                   </div>
                 )}
               </div>
@@ -1865,60 +1868,46 @@ export default function AdminDashboard() {
                           )}
                         </div>
 
-                        {/* Category Filter */}
-                        <div className="relative">
-                          <select
-                            value={productFilterCategory}
-                            onChange={(e) => setProductFilterCategory(e.target.value)}
-                            className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors appearance-none cursor-pointer"
-                          >
-                            <option value="">Tüm Kategoriler</option>
-                            {categoriesList.map(cat => (
-                              <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
+                                                {/* Category Filter */}
+                        <AdminDropdown
+                          value={productFilterCategory}
+                          onChange={setProductFilterCategory}
+                          options={[
+                            { value: '', label: 'Tüm Kategoriler' },
+                            ...categoriesList.map(cat => ({ value: cat.id, label: cat.name }))
+                          ]}
+                          placeholder="Kategori Seçin"
+                        />
 
                         {/* Badge / Status Filter */}
-                        <div className="relative">
-                          <select
-                            value={productFilterBadge}
-                            onChange={(e) => setProductFilterBadge(e.target.value)}
-                            className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors appearance-none cursor-pointer"
-                          >
-                            <option value="">Tüm Rozetler / Durum</option>
-                            <option value="featured">Öne Çıkanlar</option>
-                            <option value="bestseller">Çok Satanlar</option>
-                            <option value="discounted">İndirimli Ürünler</option>
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
+                        <AdminDropdown
+                          value={productFilterBadge}
+                          onChange={setProductFilterBadge}
+                          options={[
+                            { value: '', label: 'Tüm Rozetler / Durum' },
+                            { value: 'featured', label: 'Öne Çıkanlar' },
+                            { value: 'bestseller', label: 'Çok Satanlar' },
+                            { value: 'discounted', label: 'İndirimli Ürünler' }
+                          ]}
+                          placeholder="Rozet Seçin"
+                        />
 
                         {/* Sorting */}
-                        <div className="relative">
-                          <select
-                            value={productSortBy}
-                            onChange={(e) => setProductSortBy(e.target.value)}
-                            className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors appearance-none cursor-pointer"
-                          >
-                            <option value="newest">En Yeni Eklenenler</option>
-                            <option value="oldest">En Eski Eklenenler</option>
-                            <option value="price-asc">Fiyat: Düşükten Yükseğe</option>
-                            <option value="price-desc">Fiyat: Yüksekten Düşüğe</option>
-                            <option value="alphabet">İsim: A - Z</option>
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
+                        <AdminDropdown
+                          value={productSortBy}
+                          onChange={setProductSortBy}
+                          options={[
+                            { value: 'newest', label: 'En Yeni Eklenenler' },
+                            { value: 'oldest', label: 'En Eski Eklenenler' },
+                            { value: 'price-asc', label: 'Fiyat: Düşükten Yükseğe' },
+                            { value: 'price-desc', label: 'Fiyat: Yüksekten Düşüğe' },
+                            { value: 'alphabet', label: 'İsim: A - Z' }
+                          ]}
+                          placeholder="Sırala"
+                        />
                       </div>
-
-                      {/* View Switcher Controls */}
+                      
+{/* View Switcher Controls */}
                       <div className="flex items-center gap-2 border-l border-slate-100 pl-0 xl:pl-4 justify-end">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 hidden sm:inline-block">Görünüm:</span>
                         <div className="flex bg-slate-105 bg-slate-100 p-1 rounded-xl gap-0.5 border border-slate-200/60">
@@ -2011,12 +2000,52 @@ export default function AdminDashboard() {
                               <thead>
                                 <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50 whitespace-nowrap">
                                   <th className="py-4 px-3 w-16">Kapak</th>
-                                  <th className="py-4 px-3">Eğitim Paketi / Başlık</th>
+                                  <th 
+                                    onClick={() => setProductSortBy(productSortBy === 'alphabet' ? 'newest' : 'alphabet')}
+                                    className="py-4 px-3 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <span>Eğitim Paketi / Başlık</span>
+                                      {productSortBy === 'alphabet' ? (
+                                        <ArrowUp className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                      ) : (
+                                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-350 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                      )}
+                                    </div>
+                                  </th>
                                   <th className="py-4 px-3">Ürün Tipi</th>
                                   <th className="py-4 px-3">Kategori</th>
-                                  <th className="py-4 px-3">Fiyat</th>
+                                  <th 
+                                    onClick={() => setProductSortBy(productSortBy === 'price-asc' ? 'price-desc' : 'price-asc')}
+                                    className="py-4 px-3 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <span>Fiyat</span>
+                                      {productSortBy === 'price-asc' ? (
+                                        <ArrowUp className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                      ) : productSortBy === 'price-desc' ? (
+                                        <ArrowDown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                      ) : (
+                                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-350 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                      )}
+                                    </div>
+                                  </th>
                                   <th className="py-4 px-3">Rozetler</th>
-                                  <th className="py-4 px-3">Kayıt Tarihi</th>
+                                  <th 
+                                    onClick={() => setProductSortBy(productSortBy === 'newest' ? 'oldest' : 'newest')}
+                                    className="py-4 px-3 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <span>Kayıt Tarihi</span>
+                                      {productSortBy === 'newest' ? (
+                                        <ArrowDown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                      ) : productSortBy === 'oldest' ? (
+                                        <ArrowUp className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                      ) : (
+                                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-350 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                      )}
+                                    </div>
+                                  </th>
                                   <th className="py-4 px-3 text-right">Aksiyonlar</th>
                                 </tr>
                               </thead>
@@ -2116,512 +2145,68 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {/* Orders Log */}
+                                {/* Orders Log */}
                 {activeSection === 'orders' && (
-                  <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
-                    {orders.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50 whitespace-nowrap">
-                              <th className="py-4 px-3">Öğrenci / Alıcı</th>
-                              <th className="py-4 px-3">Satın Alınan Ürün</th>
-                              <th className="py-4 px-3">Tarih</th>
-                              <th className="py-4 px-3">Ödeme Durumu</th>
-                              <th className="py-4 px-3 text-right">Tutar</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              let processedOrders = orders.filter(order => {
-                                // 1. Search Query filter
-                                const query = searchQuery.toLowerCase().trim();
-                                const matchesSearch = !query || (
-                                  order.user?.name?.toLowerCase().includes(query) ||
-                                  order.user?.email?.toLowerCase().includes(query) ||
-                                  order.product?.title?.toLowerCase().includes(query)
-                                );
-                                
-                                // 2. Payment Status filter
-                                const matchesStatus = !orderFilterStatus || order.paymentStatus === orderFilterStatus;
-                                
-                                // 3. Product filter
-                                const matchesProduct = !orderFilterProduct || order.productId === orderFilterProduct;
-
-                                // 4. Sales/Payment Type filter
-                                let matchesType = true;
-                                if (orderFilterType === 'pos') {
-                                  matchesType = order.paymentId !== 'MANUAL_GRANT_BY_ADMIN';
-                                } else if (orderFilterType === 'manual') {
-                                  matchesType = order.paymentId === 'MANUAL_GRANT_BY_ADMIN';
-                                }
-
-                                // 5. Date Range filter
-                                let matchesDate = true;
-                                if (orderFilterDateRange) {
-                                  const orderDate = new Date(order.createdAt);
-                                  const now = new Date();
-                                  if (orderFilterDateRange === 'today') {
-                                    matchesDate = orderDate.toDateString() === now.toDateString();
-                                  } else if (orderFilterDateRange === 'week') {
-                                    const sevenDaysAgo = new Date();
-                                    sevenDaysAgo.setDate(now.getDate() - 7);
-                                    matchesDate = orderDate >= sevenDaysAgo;
-                                  } else if (orderFilterDateRange === 'month') {
-                                    matchesDate = orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
-                                  }
-                                }
-
-                                return matchesSearch && matchesStatus && matchesProduct && matchesType && matchesDate;
-                              });
-                              
-                              // 3. Sorting
-                              processedOrders.sort((a, b) => {
-                                if (orderSortBy === 'newest') {
-                                  return new Date(b.createdAt) - new Date(a.createdAt);
-                                }
-                                if (orderSortBy === 'oldest') {
-                                  return new Date(a.createdAt) - new Date(b.createdAt);
-                                }
-                                if (orderSortBy === 'amount-desc') {
-                                  return b.amount - a.amount;
-                                }
-                                if (orderSortBy === 'amount-asc') {
-                                  return a.amount - b.amount;
-                                }
-                                if (orderSortBy === 'name-asc') {
-                                  return (a.user?.name || '').localeCompare(b.user?.name || '', 'tr');
-                                }
-                                if (orderSortBy === 'name-desc') {
-                                  return (b.user?.name || '').localeCompare(a.user?.name || '', 'tr');
-                                }
-                                return 0;
-                              });
-
-                              return processedOrders.map((order) => (
-                                <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
-                                  <td className="py-3 px-3">
-                                    <button
-                                      onClick={() => {
-                                        const targetUser = users.find(u => u.id === order.userId || u.email === order.user?.email);
-                                        setSelectedUser(targetUser || order.user);
-                                      }}
-                                      className="font-bold text-slate-800 text-xs hover:text-indigo-600 hover:underline transition-colors text-left focus:outline-none block"
-                                    >
-                                      {order.user?.name || 'İsimsiz Kullanıcı'}
-                                    </button>
-                                    <div className="text-[10px] text-slate-400 font-medium">{order.user?.email}</div>
-                                  </td>
-                                  <td className="py-3 px-3">
-                                    <div className="font-semibold text-slate-700 text-xs line-clamp-1">{order.product?.title}</div>
-                                    <span className="text-[9px] font-bold text-slate-550 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded mt-0.5 inline-block whitespace-nowrap">
-                                      {order.product?.type}
-                                    </span>
-                                  </td>
-                                  <td className="py-3 px-3 text-xs text-slate-500 whitespace-nowrap">
-                                    {new Date(order.createdAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                  </td>
-                                  <td className="py-3 px-3 whitespace-nowrap">
-                                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                                      order.paymentStatus === 'SUCCESS' 
-                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                                        : 'bg-red-50 text-red-600 border-red-100'
-                                    }`}>
-                                      {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : 'BAŞARISIZ'}
-                                    </span>
-                                  </td>
-                                  <td className="py-3 px-3 text-right font-black text-slate-900 whitespace-nowrap text-xs">{order.amount.toLocaleString('tr-TR')} ₺</td>
-                                </tr>
-                              ));
-                            })()}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-12 text-center">
-                        <ShoppingBag className="w-12 h-12 text-slate-350 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-slate-800 mb-2">Henüz Sipariş Kaydı Bulunmuyor</h3>
-                        <p className="text-slate-500 text-sm leading-relaxed">Öğrenciler satın alım yaptığında kayıtlar burada belirecektir.</p>
-                      </div>
-                    )}
-                  </div>
+                  <OrdersTab
+                    orders={orders}
+                    users={users}
+                    products={products}
+                    searchQuery={searchQuery}
+                    orderFilterStatus={orderFilterStatus}
+                    orderFilterProduct={orderFilterProduct}
+                    orderFilterType={orderFilterType}
+                    orderFilterDateRange={orderFilterDateRange}
+                    orderSortBy={orderSortBy}
+                    setOrderSortBy={setOrderSortBy}
+                    setSelectedUser={setSelectedUser}
+                  />
                 )}
-
+                
                 {/* Users Administration Section */}
                 {activeSection === 'users' && (
-                  <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
-                    {users.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50 whitespace-nowrap">
-                              <th className="py-4 px-3">Ad Soyad</th>
-                              <th className="py-4 px-3">E-Posta</th>
-                              <th className="py-4 px-3">Telefon</th>
-                              <th className="py-4 px-3">Konum (İl/İlçe)</th>
-                              <th className="py-4 px-3">Kayıt Tarihi</th>
-                              <th className="py-4 px-3">Rol / Yetki</th>
-                              <th className="py-4 px-3">Eğitim Sayısı</th>
-                              <th className="py-4 px-3 text-right">Aksiyonlar</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {users.filter(item => {
-                              const query = searchQuery.toLowerCase().trim();
-                              if (!query) return true;
-                              return (
-                                item.name?.toLowerCase().includes(query) ||
-                                item.email?.toLowerCase().includes(query) ||
-                                item.phone?.toLowerCase().includes(query) ||
-                                item.city?.toLowerCase().includes(query) ||
-                                item.district?.toLowerCase().includes(query)
-                              );
-                            }).map((item) => (
-                              <tr 
-                                key={item.id} 
-                                onClick={() => setSelectedUser(item)}
-                                className="border-b border-slate-100 hover:bg-slate-50 transition-colors text-sm cursor-pointer"
-                                title="Öğrenci Detaylarını Göster"
-                              >
-                                <td className="py-3 px-3 font-bold text-slate-800 flex items-center gap-1.5 hover:text-amber-500 transition-colors whitespace-nowrap text-xs">
-                                  <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-650 font-bold shrink-0">
-                                    {item.name?.substring(0, 2).toUpperCase() || 'ÖG'}
-                                  </div>
-                                  <span>{item.name || 'Girilmemiş'}</span>
-                                </td>
-                                <td className="py-3 px-3 text-slate-600 font-medium select-all text-xs truncate max-w-[140px]" onClick={(e) => e.stopPropagation()} title={item.email}>{item.email}</td>
-                                <td className="py-3 px-3 text-slate-650 font-semibold select-all text-xs whitespace-nowrap" onClick={(e) => e.stopPropagation()}>{item.phone || '-'}</td>
-                                <td className="py-3 px-3 text-slate-550 font-medium text-xs whitespace-nowrap truncate max-w-[120px]" title={item.city ? `${item.district ? item.district + ', ' : ''}${item.city}` : ''}>
-                                  {item.city ? `${item.district ? item.district + ', ' : ''}${item.city}` : '-'}
-                                </td>
-                                <td className="py-3 px-3 text-slate-550 text-xs whitespace-nowrap">
-                                  {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </td>
-                                <td className="py-3 px-3 whitespace-nowrap">
-                                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                                    item.role === 'ADMIN' 
-                                      ? 'bg-red-50 text-red-650 border-red-100' 
-                                      : 'bg-blue-50 text-blue-650 border-blue-100'
-                                  }`}>
-                                    {item.role === 'ADMIN' ? 'YÖNETİCİ' : 'ÖĞRENCİ'}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-3 text-slate-850 font-bold text-xs text-center">{item._count?.orders || 0}</td>
-                                <td className="py-3 px-3 text-right">
-                                  <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      onClick={() => handleToggleUserRole(item.id, item.role)}
-                                      disabled={item.id === currentAdminId}
-                                      className="px-2 py-1 text-[10px] font-bold rounded-lg bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition-colors disabled:opacity-30 whitespace-nowrap"
-                                    >
-                                      {item.role === 'ADMIN' ? 'Öğrenci Yap' : 'Admin Yap'}
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteUser(item.id)}
-                                      disabled={item.id === currentAdminId}
-                                      className="p-1 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 transition-colors disabled:opacity-30"
-                                    >
-                                      <Trash className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-12 text-center text-slate-500">Kayıtlı kullanıcı bulunamadı.</div>
-                    )}
-                  </div>
+                  <StudentsTab
+                    users={users}
+                    searchQuery={searchQuery}
+                    currentAdminId={currentAdminId}
+                    handleToggleUserRole={handleToggleUserRole}
+                    handleDeleteUser={handleDeleteUser}
+                    setSelectedUser={setSelectedUser}
+                  />
                 )}
-
+                
                 {/* Coupons Management Section */}
                 {activeSection === 'coupons' && (
-                  <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
-                    {coupons.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50 whitespace-nowrap">
-                              <th className="py-4 px-3">Kupon Kodu</th>
-                              <th className="py-4 px-3">İndirim Miktarı</th>
-                              <th className="py-4 px-3">Limitler</th>
-                              <th className="py-4 px-3">Son Kullanma</th>
-                              <th className="py-4 px-3">Durum</th>
-                              <th className="py-4 px-3 text-right">Aksiyonlar</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {coupons.filter(coupon => {
-                              const query = searchQuery.toLowerCase().trim();
-                              if (!query) return true;
-                              return coupon.code?.toLowerCase().includes(query);
-                            }).map((coupon) => (
-                              <tr key={coupon.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
-                                <td className="py-3 px-3">
-                                  <div className="font-mono font-black text-amber-600 tracking-wider text-xs">{coupon.code}</div>
-                                  {coupon.productIds && coupon.productIds.length > 0 ? (
-                                    <div className="text-[9px] text-slate-400 font-bold mt-0.5 truncate max-w-[150px]" title={coupon.productIds.map(id => products.find(p => p.id === id)?.title || 'Bilinmeyen Ürün').join(', ')}>
-                                      Geçerli Ürünler: {coupon.productIds.map(id => products.find(p => p.id === id)?.title || 'Bilinmeyen Ürün').join(', ')}
-                                    </div>
-                                  ) : (
-                                    <div className="text-[9px] text-slate-400 font-bold mt-0.5 whitespace-nowrap">
-                                      Tüm Ürünlerde Geçerli (Global)
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="py-3 px-3 whitespace-nowrap">
-                                  <div className="font-black text-slate-800 text-xs">
-                                    {coupon.discountType === 'PERCENTAGE' ? `%${coupon.discountValue}` : `${coupon.discountValue.toLocaleString('tr-TR')} ₺`}
-                                  </div>
-                                </td>
-                                <td className="py-3 px-3 text-slate-550 font-medium text-xs whitespace-nowrap">
-                                  <div className="flex flex-col">
-                                    <span>Kullanım: {coupon.uses} / {coupon.maxUses || '∞'}</span>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-3 text-slate-550 text-xs whitespace-nowrap">
-                                  {coupon.expiryDate ? (
-                                    new Date(coupon.expiryDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
-                                  ) : (
-                                    <span className="text-slate-400 font-medium">Sınırsız</span>
-                                  )}
-                                </td>
-                                <td className="py-3 px-3 whitespace-nowrap">
-                                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                                    coupon.isActive 
-                                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                                      : 'bg-slate-100 text-slate-500 border-slate-200'
-                                  }`}>
-                                    {coupon.isActive ? 'AKTİF' : 'PASİF'}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-3 text-right">
-                                  <div className="flex justify-end gap-1.5 whitespace-nowrap">
-                                    <button
-                                      onClick={() => handleToggleCouponStatus(coupon.id, coupon.isActive)}
-                                      className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-colors ${
-                                        coupon.isActive
-                                          ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                                          : 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100'
-                                      }`}
-                                    >
-                                      {coupon.isActive ? 'Pasife Al' : 'Aktife Al'}
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteCoupon(coupon.id)}
-                                      className="p-1 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 transition-colors"
-                                    >
-                                      <Trash className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center shadow-sm">
-                        <Gift className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-slate-800 mb-2">Aktif Kupon Kodu Bulunmuyor</h3>
-                        <p className="text-slate-500 text-sm leading-relaxed">Yeni Kupon Ekle butonuna basarak indirim kodları üretebilirsiniz.</p>
-                      </div>
-                    )}
-                  </div>
+                  <CouponsTab
+                    coupons={coupons}
+                    products={products}
+                    searchQuery={searchQuery}
+                    handleToggleCouponStatus={handleToggleCouponStatus}
+                    handleDeleteCoupon={handleDeleteCoupon}
+                  />
                 )}
-
+                
                 {/* Support Messages Management Section */}
                 {activeSection === 'messages' && (
-                  <div className="space-y-4">
-                    {messages.length > 0 ? (
-                      messages.filter(msg => {
-                        const query = searchQuery.toLowerCase().trim();
-                        if (!query) return true;
-                        return (
-                          msg.name?.toLowerCase().includes(query) ||
-                          msg.email?.toLowerCase().includes(query) ||
-                          msg.subject?.toLowerCase().includes(query) ||
-                          msg.message?.toLowerCase().includes(query)
-                        );
-                      }).map((msg) => (
-                        <div key={msg.id} className={`bg-white border rounded-3xl p-6 flex flex-col md:flex-row justify-between gap-5 transition-all shadow-sm ${
-                          msg.status === 'UNREAD' ? 'border-amber-500/40 bg-amber-500/[0.01] shadow-md shadow-amber-500/[0.01]' : 'border-slate-200/80 hover:border-slate-350'
-                        }`}>
-                          <div className="space-y-2.5 flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <span className="font-black text-slate-800">{msg.name}</span>
-                              <span className="text-xs text-slate-400 font-mono font-medium">{msg.email}</span>
-                              <span className="text-slate-200 text-xs">|</span>
-                              <span className="text-xs text-slate-550 flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                {new Date(msg.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            
-                            <div className="text-sm font-bold text-slate-700">
-                              Konu: {msg.subject || 'Konu Belirtilmemiş'}
-                            </div>
-                            
-                            <p className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                              {msg.message}
-                            </p>
-                          </div>
-
-                          <div className="flex md:flex-col justify-end items-end gap-3 shrink-0">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border ${
-                                msg.status === 'UNREAD' 
-                                  ? 'bg-amber-50 text-amber-600 border-amber-100' 
-                                  : msg.status === 'READ'
-                                  ? 'bg-blue-50 text-blue-600 border-blue-100'
-                                  : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                              }`}>
-                                {msg.status === 'UNREAD' ? 'OKUNMADI' : msg.status === 'READ' ? 'OKUNDU' : 'ÇÖZÜLDÜ'}
-                              </span>
-                            </div>
-
-                            <div className="flex gap-2">
-                              {msg.status === 'UNREAD' && (
-                                <button
-                                  onClick={() => handleUpdateMessageStatus(msg.id, 'READ')}
-                                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-50 border border-blue-100 text-blue-650 hover:bg-blue-100 transition-colors"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                  Okundu
-                                </button>
-                              )}
-                              {msg.status !== 'RESOLVED' && (
-                                <button
-                                  onClick={() => handleUpdateMessageStatus(msg.id, 'RESOLVED')}
-                                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 hover:bg-emerald-100 transition-colors"
-                                >
-                                  <CheckSquare className="w-3.5 h-3.5" />
-                                  Çözüldü
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDeleteMessage(msg.id)}
-                                className="p-1.5 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 transition-colors"
-                              >
-                                <Trash className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center max-w-md mx-auto shadow-sm">
-                        <MessageSquare className="w-12 h-12 text-slate-450 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-slate-800 mb-2">Destek Talebi Bulunmuyor</h3>
-                        <p className="text-slate-500 text-sm leading-relaxed">İletişim formundan gönderilen tüm mesajlar burada listelenecektir.</p>
-                      </div>
-                    )}
-                  </div>
+                  <SupportMessagesTab
+                    messages={messages}
+                    searchQuery={searchQuery}
+                    handleUpdateMessageStatus={handleUpdateMessageStatus}
+                    handleDeleteMessage={handleDeleteMessage}
+                  />
                 )}
-
+                
                 {/* Categories Management Section */}
                 {activeSection === 'categories' && (
-                  <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
-                    {categoriesList.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50 whitespace-nowrap">
-                              <th className="py-4 px-3">Kategori Adı</th>
-                              <th className="py-4 px-3">Slug</th>
-                              <th className="py-4 px-3">Açıklama</th>
-                              <th className="py-4 px-3">Sıra</th>
-                              <th className="py-4 px-3">Ürün Sayısı</th>
-                              <th className="py-4 px-3 text-right">Aksiyonlar</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {categoriesList.filter(cat => {
-                              const query = searchQuery.toLowerCase().trim();
-                              if (!query) return true;
-                              return (
-                                cat.name?.toLowerCase().includes(query) ||
-                                cat.slug?.toLowerCase().includes(query) ||
-                                cat.description?.toLowerCase().includes(query)
-                              );
-                            }).map((cat) => {
-                              const originalIndex = categoriesList.findIndex(c => c.id === cat.id);
-                              const isFirst = originalIndex === 0;
-                              const isLast = originalIndex === categoriesList.length - 1;
-                              return (
-                                <tr key={cat.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
-                                  <td className="py-3 px-3">
-                                    <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs whitespace-nowrap">
-                                      <span className={`w-2.5 h-2.5 rounded-full bg-gradient-to-br ${cat.color || 'from-blue-500 to-indigo-600'}`} />
-                                      <span>{cat.name}</span>
-                                      {cat.showInNavbar !== false ? (
-                                        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-100" title="Üst menüde gösterilir">Menü</span>
-                                      ) : (
-                                        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200" title="Üst menüde gizlidir">Gizli</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="py-3 px-3 font-mono font-medium text-slate-550 text-xs whitespace-nowrap">{cat.slug}</td>
-                                  <td className="py-3 px-3 text-slate-500 font-medium truncate max-w-[200px] text-xs" title={cat.description}>{cat.description || 'Açıklama belirtilmemiş'}</td>
-                                  <td className="py-3 px-3 font-mono font-bold text-slate-750 text-xs">
-                                    <div className="flex items-center gap-1.5">
-                                      <span>{cat.sortOrder !== undefined ? cat.sortOrder : 0}</span>
-                                      <div className="flex flex-col gap-0.5">
-                                        <button
-                                          type="button"
-                                          disabled={isFirst}
-                                          onClick={() => handleMoveCategory(cat, 'up')}
-                                          className="p-0.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 disabled:opacity-20 disabled:hover:bg-transparent"
-                                          title="Yukarı Taşı"
-                                        >
-                                          <ArrowUp className="w-2.5 h-2.5" />
-                                        </button>
-                                        <button
-                                          type="button"
-                                          disabled={isLast}
-                                          onClick={() => handleMoveCategory(cat, 'down')}
-                                          className="p-0.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 disabled:opacity-20 disabled:hover:bg-transparent"
-                                          title="Aşağı Taşı"
-                                        >
-                                          <ArrowDown className="w-2.5 h-2.5" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td className="py-3 px-3 text-slate-850 font-bold text-xs text-center">
-                                    {cat._count?.products || 0}
-                                  </td>
-                                  <td className="py-3 px-3 text-right">
-                                    <div className="flex justify-end gap-1.5">
-                                      <button
-                                        onClick={() => handleOpenEditCategoryModal(cat)}
-                                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-650 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                                      >
-                                        <Edit3 className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteCategory(cat.id)}
-                                        className="p-1.5 rounded-lg bg-red-50 border border-red-100 text-red-500 hover:bg-red-100 transition-colors"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-12 text-center text-slate-500">Kayıtlı kategori bulunamadı.</div>
-                    )}
-                  </div>
+                  <CategoriesTab
+                    categoriesList={categoriesList}
+                    searchQuery={searchQuery}
+                    handleMoveCategory={handleMoveCategory}
+                    handleOpenEditCategoryModal={handleOpenEditCategoryModal}
+                    handleDeleteCategory={handleDeleteCategory}
+                  />
                 )}
-
-                {/* Home Settings Management Section */}
+                
+{/* Home Settings Management Section */}
                 {activeSection === 'home' && (() => {
                   const formatPreviewTitle = (text) => {
                     if (!text) return '';
@@ -3944,678 +3529,44 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
       {/* Modal - Add / Edit Product */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-955/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-4xl bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
-            >
-              {/* Modal Header */}
-              <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 shrink-0 bg-white">
-                <h3 className="text-lg font-black text-slate-900">
-                  {editingId ? 'Eğitimi Düzenle' : 'Yeni Eğitim Ekle'}
-                </h3>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 text-slate-400 hover:text-slate-655 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Modal Form Content */}
-              <form onSubmit={handleSaveProduct} data-lenis-prevent className="flex-1 overflow-y-auto p-8 space-y-8 bg-white">
-                
-                {/* Section: Temel Bilgiler */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Temel Bilgiler</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Eğitim Başlığı</label>
-                      <input 
-                        type="text" 
-                        required
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Örn: 10. Sınıf Matematik Seti"
-                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Kategori / Ürün Tipi</label>
-                      <div className="relative">
-                        <select 
-                          value={categoryId}
-                          onChange={(e) => setCategoryId(e.target.value)}
-                          className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-bold shadow-sm appearance-none cursor-pointer"
-                        >
-                          <option value="">-- Kategori Seçin --</option>
-                          {categoriesList.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <ChevronDown className="w-4 h-4" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section: Fiyatlandırma & Satış */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Fiyatlandırma & Satış Seçenekleri</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Fiyat</label>
-                      <div className="relative">
-                        <input 
-                          type="number" 
-                          required
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          placeholder="Örn: 299"
-                          className="w-full pl-4 pr-10 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₺</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">İndirimli Fiyat (Opsiyonel)</label>
-                      <div className="relative">
-                        <input 
-                          type="number" 
-                          value={discountedPrice}
-                          onChange={(e) => setDiscountedPrice(e.target.value)}
-                          placeholder="Örn: 199"
-                          className="w-full pl-4 pr-10 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₺</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Sıralama (Sıra No)</label>
-                      <input 
-                        type="number" 
-                        value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value)}
-                        placeholder="Örn: 1"
-                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-                    {/* Switch: Featured */}
-                    <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
-                      <div className="relative shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={isFeatured}
-                          onChange={(e) => setIsFeatured(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors block">Öne Çıkan Ürün</span>
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">Ana sayfadaki vitrinde gösterilsin.</span>
-                      </div>
-                    </label>
-
-                    {/* Switch: Bestseller */}
-                    <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
-                      <div className="relative shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={isBestseller}
-                          onChange={(e) => setIsBestseller(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors block">Çok Satan Ürün</span>
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">&quot;Çok Satan&quot; etiketiyle vurgulansın.</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Section: Teknik Özellikler (Dinamik) */}
-                {(type === 'Dijital Kitap' || type === 'Video Ders Seti' || type === 'Deneme Paketi' || type === 'Kombo Paket') && (
-                  <div className="space-y-5">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                      <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Eğitim Detayları & Metrikler</h4>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {(type === 'Dijital Kitap' || type === 'Kombo Paket') && (
-                        <div>
-                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Sayfa Sayısı</label>
-                          <input 
-                            type="number" 
-                            value={pages}
-                            onChange={(e) => setPages(e.target.value)}
-                            placeholder="Örn: 450"
-                            className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                          />
-                        </div>
-                      )}
-
-                      {(type === 'Video Ders Seti' || type === 'Kombo Paket') && (
-                        <>
-                          <div>
-                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Video Sayısı</label>
-                            <input 
-                              type="number" 
-                              value={videoCount}
-                              onChange={(e) => setVideoCount(e.target.value)}
-                              placeholder="Örn: 120"
-                              className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Toplam Süre</label>
-                            <input 
-                              type="text" 
-                              value={duration}
-                              onChange={(e) => setDuration(e.target.value)}
-                              placeholder="Örn: 96 saat"
-                              className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {(type === 'Deneme Paketi' || type === 'Kombo Paket') && (
-                        <div>
-                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Deneme Sayısı</label>
-                          <input 
-                            type="number" 
-                            value={examCount}
-                            onChange={(e) => setExamCount(e.target.value)}
-                            placeholder="Örn: 30"
-                            className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Section: Görsel Tanımlama */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Kapak Görseli</h4>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 bg-slate-50/50 border border-slate-200/60 p-4 rounded-3xl">
-                    {/* Live Preview Card */}
-                    <div className="relative aspect-[5/7] w-32 shrink-0 bg-slate-100 border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex items-center justify-center">
-                      {coverImage ? (
-                        <img 
-                          src={coverImage} 
-                          alt="Önizleme" 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Package className="w-8 h-8 text-slate-300" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 w-full space-y-2.5">
-                      <div className="flex items-center justify-between pl-1">
-                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">Görsel Dosya Yolu / Dosya Yükle</label>
-                        <span className="text-[10px] text-amber-605 font-bold uppercase tracking-wider">Önerilen: 600x840 px (5:7)</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <input 
-                          type="text" 
-                          required
-                          value={coverImage}
-                          onChange={(e) => setCoverImage(e.target.value)}
-                          placeholder="Örn: /covers/matematik.png"
-                          className="flex-1 px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-xs font-mono tracking-wide shadow-sm"
-                        />
-                        <label className="cursor-pointer px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shrink-0 shadow-sm">
-                          {isUploading ? (
-                            <>
-                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Yükleniyor...
-                            </>
-                          ) : (
-                            <>
-                              <PlusCircle className="w-4 h-4" />
-                              Görsel Yükle
-                            </>
-                          )}
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleUploadImage} 
-                            disabled={isUploading}
-                            className="hidden" 
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section: Eğitim İçerik Detayları */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">İçerik Detayları</h4>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Açıklama</label>
-                      <textarea 
-                        rows={4}
-                        required
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Eğitim içeriğinin kısa açıklaması..."
-                        className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm resize-none shadow-sm font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider pl-1">İçindekiler</label>
-                        <button
-                          type="button"
-                          onClick={() => setContents([...contents, ''])}
-                          className="px-2.5 py-1 text-[10px] font-black tracking-wider uppercase bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors flex items-center gap-1 shadow-sm"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5" />
-                          Öğe Ekle
-                        </button>
-                      </div>
-                      
-                      {contents.length > 0 ? (
-                        <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 border border-slate-100 p-2.5 rounded-2xl bg-slate-50/50">
-                          {contents.map((item, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-slate-400 w-5 text-right shrink-0">
-                                {(index + 1).toString().padStart(2, '0')}
-                              </span>
-                              <input 
-                                type="text" 
-                                required
-                                value={item}
-                                onChange={(e) => {
-                                  const newContents = [...contents];
-                                  newContents[index] = e.target.value;
-                                  setContents(newContents);
-                                }}
-                                placeholder="Örn: 📚 Matematik Konu Anlatımı Kitabı (456 sayfa)"
-                                className="flex-1 px-3 py-2 bg-white border border-slate-200 focus:border-amber-500 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none transition-all text-xs font-semibold shadow-sm"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newContents = contents.filter((_, i) => i !== index);
-                                  setContents(newContents);
-                                }}
-                                className="p-2 bg-red-50 hover:bg-red-100 border border-red-100 text-red-500 rounded-xl transition-all shrink-0"
-                                title="Müfredat Öğesini Sil"
-                              >
-                                <Trash className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="p-6 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs font-medium bg-slate-50/30">
-                          Henüz hiçbir içerik eklenmedi. "Öğe Ekle" butonuna basarak başlayın.
-                        </div>
-                      )}
-                    </div>
-
-                    <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
-                      <div className="relative shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={showOutcomes}
-                          onChange={(e) => setShowOutcomes(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors block">Kazanımlar Bölümünü Göster</span>
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">Ürün detay sayfasındaki &quot;Kazanımlar&quot; sekmesi aktif olsun.</span>
-                      </div>
-                    </label>
-
-                    {showOutcomes && (
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider pl-1">Kazanımlar / Neler Katacak?</label>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Virgülle ayırarak yazın</span>
-                        </div>
-                        <input 
-                          type="text" 
-                          value={outcomesInput}
-                          onChange={(e) => setOutcomesInput(e.target.value)}
-                          placeholder="Örn: Sınav netlerinde artış, Hızlı pratik yapabilme"
-                          className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-medium shadow-sm"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Section: Örnek İçerik */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Örnek İçerik (Demo)</h4>
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
-                      <div className="relative shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={showDemo}
-                          onChange={(e) => setShowDemo(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors block">Örnek İçerik Bölümünü Göster</span>
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">Ürün detay sayfasındaki &quot;Örnek İçerik&quot; sekmesi aktif olsun.</span>
-                      </div>
-                    </label>
-
-                    {showDemo && (
-                      <div>
-                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Örnek İçerik Bağlantısı (PDF / Video URL)</label>
-                        <input 
-                          type="text" 
-                          value={demoUrl}
-                          onChange={(e) => setDemoUrl(e.target.value)}
-                          placeholder="Örn: /uploads/ornek.pdf veya Youtube video linki"
-                          className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Section: Sıkça Sorulan Sorular (SSS) */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Sıkça Sorulan Sorular (SSS)</h4>
-                  </div>
-
-                  <div className="space-y-6">
-                    <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
-                      <div className="relative shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={showFaq}
-                          onChange={(e) => setShowFaq(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors block">SSS Bölümünü Göster</span>
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">Ürün detay sayfasındaki &quot;SSS&quot; sekmesi aktif olsun.</span>
-                      </div>
-                    </label>
-
-                    {showFaq && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider pl-1">Sorular & Cevaplar</label>
-                          <button
-                            type="button"
-                            onClick={() => setFaqs([...faqs, { q: '', a: '' }])}
-                            className="px-3.5 py-2 text-xs font-black bg-slate-900 hover:bg-slate-800 text-white rounded-2xl transition-all shadow-sm flex items-center gap-1.5"
-                          >
-                            <PlusCircle className="w-3.5 h-3.5" />
-                            Yeni Soru Ekle
-                          </button>
-                        </div>
-                        
-                        {faqs.length > 0 ? (
-                          <div className="space-y-4">
-                            {faqs.map((faq, i) => (
-                              <div key={i} className="flex gap-4 items-start bg-slate-50 border border-slate-200/60 p-5 rounded-[1.5rem] relative">
-                                <div className="flex-1 space-y-3.5">
-                                  <input
-                                    type="text"
-                                    required
-                                    value={faq.q}
-                                    onChange={(e) => {
-                                      const newFaqs = [...faqs];
-                                      newFaqs[i].q = e.target.value;
-                                      setFaqs(newFaqs);
-                                    }}
-                                    placeholder="Soru yazın"
-                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500/40 transition-colors text-xs font-bold"
-                                  />
-                                  <textarea
-                                    rows={2}
-                                    required
-                                    value={faq.a}
-                                    onChange={(e) => {
-                                      const newFaqs = [...faqs];
-                                      newFaqs[i].a = e.target.value;
-                                      setFaqs(newFaqs);
-                                    }}
-                                    placeholder="Cevap yazın"
-                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500/40 transition-colors text-xs font-medium resize-none"
-                                  />
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setFaqs(faqs.filter((_, idx) => idx !== i))}
-                                  className="p-2.5 rounded-2xl bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 transition-colors self-center shrink-0"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-center p-6 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-slate-400 text-xs font-bold">
-                            Henüz özel soru eklenmedi. Boş bırakırsanız varsayılan genel sorular gösterilir.
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Section: Eğitmen Bilgileri */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                    <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Eğitmen Bilgileri</h4>
-                  </div>
-
-                  <div className="space-y-6">
-                    <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
-                      <div className="relative shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={showInstructor}
-                          onChange={(e) => setShowInstructor(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors block">Eğitmen Bölümünü Göster</span>
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">Ürün detay sayfasındaki &quot;Eğitmen&quot; sekmesi aktif olsun.</span>
-                      </div>
-                    </label>
-
-                    {showInstructor && (
-                      <div className="space-y-5">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                          <div className="sm:col-span-2">
-                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Eğitmen Kadrosu Başlığı / Adı</label>
-                            <input 
-                              type="text"
-                              value={instructorName}
-                              onChange={(e) => setInstructorName(e.target.value)}
-                              placeholder="Örn: Uzman Eğitmen Kadrosu"
-                              className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Deneyim / Rol</label>
-                            <input 
-                              type="text"
-                              value={instructorExperience}
-                              onChange={(e) => setInstructorExperience(e.target.value)}
-                              placeholder="Örn: 10+ Yıl Deneyim"
-                              className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-                          <div className="sm:col-span-3">
-                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Eğitmen Açıklaması</label>
-                            <textarea 
-                              rows={3}
-                              value={instructorDescription}
-                              onChange={(e) => setInstructorDescription(e.target.value)}
-                              placeholder="Eğitmen kadrosu hakkında detaylı bilgi..."
-                              className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm resize-none shadow-sm font-medium"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5 pl-1">Avatar İnisiyali</label>
-                            <input 
-                              type="text"
-                              maxLength={2}
-                              value={instructorAvatar}
-                              onChange={(e) => setInstructorAvatar(e.target.value.toUpperCase())}
-                              placeholder="Örn: E"
-                              className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm text-center"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Instructor Image Upload */}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 bg-slate-50/50 border border-slate-200/60 p-4 rounded-3xl">
-                          {/* Live Preview Card */}
-                          <div className="relative w-20 h-20 shrink-0 bg-slate-100 border border-slate-200 rounded-full overflow-hidden shadow-sm flex items-center justify-center">
-                            {instructorImage ? (
-                              <img 
-                                src={instructorImage} 
-                                alt="Eğitmen Önizleme" 
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-accent-400 to-orange-600 flex items-center justify-center text-2xl text-white font-bold">
-                                {instructorAvatar || 'E'}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex-1 w-full space-y-2.5">
-                            <div className="flex items-center justify-between pl-1">
-                              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">Eğitmen Görseli (Dosya Yükle / URL)</label>
-                              <span className="text-[10px] text-amber-605 font-bold uppercase tracking-wider">Önerilen: 200x200 px (1:1)</span>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <input 
-                                type="text" 
-                                value={instructorImage}
-                                onChange={(e) => setInstructorImage(e.target.value)}
-                                placeholder="Dosya yolu veya yüklenen görsel linki..."
-                                className="flex-1 px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-xs font-mono tracking-wide shadow-sm"
-                              />
-                              <label className="cursor-pointer px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shrink-0 shadow-sm">
-                                {isUploadingInstructor ? (
-                                  <>
-                                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    Yükleniyor...
-                                  </>
-                                ) : (
-                                  <>
-                                    <PlusCircle className="w-4 h-4" />
-                                    Görsel Yükle
-                                  </>
-                                )}
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  onChange={handleUploadInstructorImage} 
-                                  disabled={isUploadingInstructor}
-                                  className="hidden" 
-                                />
-                              </label>
-                              {instructorImage && (
-                                <button
-                                  type="button"
-                                  onClick={() => setInstructorImage('')}
-                                  className="px-4 py-3 bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-2xl text-xs font-bold transition-all"
-                                >
-                                  Görseli Kaldır
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex gap-4 pt-6 border-t border-slate-100 shrink-0">
-                  <button 
-                    type="button" 
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-3.5 rounded-2xl font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors text-sm shadow-sm"
-                  >
-                    İptal
-                  </button>
-                  <button 
-                    type="submit"
-                    className="flex-1 py-3.5 rounded-2xl font-bold bg-amber-500 text-white hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/15 transition-all text-sm shadow-md shadow-amber-500/10"
-                  >
-                    {editingId ? 'Değişiklikleri Kaydet' : 'Eğitimi Ekle'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ProductFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        editingId={editingId}
+        categoriesList={categoriesList}
+        handleSaveProduct={handleSaveProduct}
+        title={title} setTitle={setTitle}
+        price={price} setPrice={setPrice}
+        discountedPrice={discountedPrice} setDiscountedPrice={setDiscountedPrice}
+        sortOrder={sortOrder} setSortOrder={setSortOrder}
+        isFeatured={isFeatured} setIsFeatured={setIsFeatured}
+        isBestseller={isBestseller} setIsBestseller={setIsBestseller}
+        type={type} setType={setType}
+        categoryId={categoryId} setCategoryId={setCategoryId}
+        coverImage={coverImage} setCoverImage={setCoverImage}
+        description={description} setDescription={setDescription}
+        contents={contents} setContents={setContents}
+        outcomesInput={outcomesInput} setOutcomesInput={setOutcomesInput}
+        pages={pages} setPages={setPages}
+        videoCount={videoCount} setVideoCount={setVideoCount}
+        duration={duration} setDuration={setDuration}
+        examCount={examCount} setExamCount={setExamCount}
+        showDemo={showDemo} setShowDemo={setShowDemo}
+        demoUrl={demoUrl} setDemoUrl={setDemoUrl}
+        showFaq={showFaq} setShowFaq={setShowFaq}
+        faqs={faqs} setFaqs={setFaqs}
+        showOutcomes={showOutcomes} setShowOutcomes={setShowOutcomes}
+        showInstructor={showInstructor} setShowInstructor={setShowInstructor}
+        instructorName={instructorName} setInstructorName={setInstructorName}
+        instructorExperience={instructorExperience} setInstructorExperience={setInstructorExperience}
+        instructorDescription={instructorDescription} setInstructorDescription={setInstructorDescription}
+        instructorAvatar={instructorAvatar} setInstructorAvatar={setInstructorAvatar}
+        instructorImage={instructorImage} setInstructorImage={setInstructorImage}
+        isUploading={isUploading}
+        handleUploadImage={handleUploadImage}
+        isUploadingInstructor={isUploadingInstructor}
+        handleUploadInstructorImage={handleUploadInstructorImage}
+      />
 
       {/* Modal - Add Coupon */}
       <AnimatePresence>
@@ -4625,7 +3576,7 @@ export default function AdminDashboard() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] shadow-2xl flex flex-col"
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 shrink-0 bg-white">
@@ -4770,7 +3721,7 @@ export default function AdminDashboard() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] shadow-2xl flex flex-col"
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 shrink-0 bg-white">
@@ -4825,45 +3776,178 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-2 pl-1">İkon</label>
-                    <select 
-                      value={categoryIcon}
-                      onChange={(e) => setCategoryIcon(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-emerald-500/40 transition-colors text-sm font-semibold"
-                    >
-                      <option value="BookOpen">Kitap (BookOpen)</option>
-                      <option value="Play">Video (Play)</option>
-                      <option value="FileCheck">Sınav (FileCheck)</option>
-                      <option value="Package">Kutu (Package)</option>
-                      <option value="GraduationCap">Akademi (GraduationCap)</option>
-                      <option value="Award">Derece (Award)</option>
-                      <option value="Calculator">Matematik (Calculator)</option>
-                      <option value="Compass">Sosyal (Compass)</option>
-                      <option value="Languages">Sözel/Dil (Languages)</option>
-                      <option value="Cpu">Yazılım (Cpu)</option>
-                      <option value="Sparkles">Rehberlik (Sparkles)</option>
-                      <option value="PenTool">Edebiyat (PenTool)</option>
-                      <option value="History">Tarih (History)</option>
-                      <option value="FlaskConical">Fen (FlaskConical)</option>
-                      <option value="Globe">Coğrafya (Globe)</option>
-                    </select>
+                    <div className="relative z-20" ref={iconDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsCategoryIconOpen(!isCategoryIconOpen)}
+                        className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none transition-all cursor-pointer text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const iconOptions = [
+                              { value: "BookOpen", label: "Kitap", icon: BookOpen },
+                              { value: "Play", label: "Video", icon: Play },
+                              { value: "FileCheck", label: "Sınav", icon: FileCheck },
+                              { value: "Package", label: "Kutu", icon: Package },
+                              { value: "GraduationCap", label: "Akademi", icon: GraduationCap },
+                              { value: "Award", label: "Derece", icon: Award },
+                              { value: "Calculator", label: "Matematik", icon: Calculator },
+                              { value: "Compass", label: "Sosyal", icon: Compass },
+                              { value: "Languages", label: "Sözel/Dil", icon: Languages },
+                              { value: "Cpu", label: "Yazılım", icon: Cpu },
+                              { value: "Sparkles", label: "Rehberlik", icon: Sparkles },
+                              { value: "PenTool", label: "Edebiyat", icon: PenTool },
+                              { value: "History", label: "Tarih", icon: History },
+                              { value: "FlaskConical", label: "Fen", icon: FlaskConical },
+                              { value: "Globe", label: "Coğrafya", icon: Globe }
+                            ];
+                            const selected = iconOptions.find(opt => opt.value === categoryIcon);
+                            if (selected) {
+                              const SelectedIcon = selected.icon;
+                              return (
+                                <>
+                                  <SelectedIcon className="w-4 h-4 text-emerald-500 shrink-0" />
+                                  <span>{selected.label}</span>
+                                </>
+                              );
+                            }
+                            return <span>Seçin</span>;
+                          })()}
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCategoryIconOpen ? 'rotate-180 text-emerald-500' : ''}`} />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {isCategoryIconOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-50 left-0 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl max-h-[220px] overflow-y-auto py-1.5 scrollbar-thin"
+                          >
+                            {[
+                              { value: "BookOpen", label: "Kitap", icon: BookOpen },
+                              { value: "Play", label: "Video", icon: Play },
+                              { value: "FileCheck", label: "Sınav", icon: FileCheck },
+                              { value: "Package", label: "Kutu", icon: Package },
+                              { value: "GraduationCap", label: "Akademi", icon: GraduationCap },
+                              { value: "Award", label: "Derece", icon: Award },
+                              { value: "Calculator", label: "Matematik", icon: Calculator },
+                              { value: "Compass", label: "Sosyal", icon: Compass },
+                              { value: "Languages", label: "Sözel/Dil", icon: Languages },
+                              { value: "Cpu", label: "Yazılım", icon: Cpu },
+                              { value: "Sparkles", label: "Rehberlik", icon: Sparkles },
+                              { value: "PenTool", label: "Edebiyat", icon: PenTool },
+                              { value: "History", label: "Tarih", icon: History },
+                              { value: "FlaskConical", label: "Fen", icon: FlaskConical },
+                              { value: "Globe", label: "Coğrafya", icon: Globe }
+                            ].map((opt) => {
+                              const IconComp = opt.icon;
+                              const isSelected = opt.value === categoryIcon;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setCategoryIcon(opt.value);
+                                    setIsCategoryIconOpen(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors text-left font-bold ${
+                                    isSelected 
+                                      ? 'bg-emerald-50 text-emerald-600' 
+                                      : 'text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <IconComp className={`w-4 h-4 ${isSelected ? 'text-emerald-500' : 'text-slate-400'}`} />
+                                    <span>{opt.label}</span>
+                                  </div>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-2 pl-1">Renk Grubu</label>
-                    <select 
-                      value={categoryColor}
-                      onChange={(e) => setCategoryColor(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-emerald-500/40 transition-colors text-sm font-semibold"
-                    >
-                      <option value="from-blue-500 to-indigo-600">Mavi (Blue)</option>
-                      <option value="from-violet-500 to-purple-600">Mor (Purple)</option>
-                      <option value="from-emerald-500 to-teal-600">Yeşil (Green)</option>
-                      <option value="from-accent-400 to-orange-600">Turuncu (Orange)</option>
-                    </select>
+                    <div className="relative z-20" ref={colorDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsCategoryColorOpen(!isCategoryColorOpen)}
+                        className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none transition-all cursor-pointer text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const colorOptions = [
+                              { value: "from-blue-500 to-indigo-600", label: "Mavi", bg: "from-blue-500 to-indigo-600" },
+                              { value: "from-violet-500 to-purple-600", label: "Mor", bg: "from-violet-500 to-purple-600" },
+                              { value: "from-emerald-500 to-teal-600", label: "Yeşil", bg: "from-emerald-500 to-teal-600" },
+                              { value: "from-accent-400 to-orange-600", label: "Turuncu", bg: "from-accent-400 to-orange-600" }
+                            ];
+                            const selected = colorOptions.find(opt => opt.value === categoryColor);
+                            if (selected) {
+                              return (
+                                <>
+                                  <span className={`w-3 h-3 rounded-full bg-gradient-to-br ${selected.bg} shrink-0`} />
+                                  <span>{selected.label}</span>
+                                </>
+                              );
+                            }
+                            return <span>Seçin</span>;
+                          })()}
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCategoryColorOpen ? 'rotate-180 text-emerald-500' : ''}`} />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {isCategoryColorOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-50 left-0 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-1"
+                          >
+                            {[
+                              { value: "from-blue-500 to-indigo-600", label: "Mavi", bg: "from-blue-500 to-indigo-600" },
+                              { value: "from-violet-500 to-purple-600", label: "Mor", bg: "from-violet-500 to-purple-600" },
+                              { value: "from-emerald-500 to-teal-600", label: "Yeşil", bg: "from-emerald-500 to-teal-600" },
+                              { value: "from-accent-400 to-orange-600", label: "Turuncu", bg: "from-accent-400 to-orange-600" }
+                            ].map((opt) => {
+                              const isSelected = opt.value === categoryColor;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setCategoryColor(opt.value);
+                                    setIsCategoryColorOpen(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors text-left font-bold ${
+                                    isSelected 
+                                      ? 'bg-emerald-50 text-emerald-600' 
+                                      : 'text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className={`w-3.5 h-3.5 rounded-full bg-gradient-to-br ${opt.bg} shrink-0`} />
+                                    <span>{opt.label}</span>
+                                  </div>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
-                </div>
-
-                {/* Switch: showInNavbar */}
+                </div>                {/* Switch: showInNavbar */}
                 <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
                   <div className="relative shrink-0">
                     <input
@@ -4909,7 +3993,7 @@ export default function AdminDashboard() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] shadow-2xl flex flex-col"
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-white">
@@ -4966,17 +4050,56 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-slate-455 uppercase tracking-widest mb-2 pl-1">Puan</label>
-                    <select 
-                      value={testimonialRating}
-                      onChange={(e) => setTestimonialRating(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white focus:border-amber-500/40 transition-colors text-sm font-semibold"
-                    >
-                      <option value="5">5 Yıldız</option>
-                      <option value="4">4 Yıldız</option>
-                      <option value="3">3 Yıldız</option>
-                      <option value="2">2 Yıldız</option>
-                      <option value="1">1 Yıldız</option>
-                    </select>
+                    <div className="relative" ref={ratingDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsTestimonialRatingOpen(!isTestimonialRatingOpen)}
+                        className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none transition-all cursor-pointer text-left"
+                      >
+                        <div className="flex items-center gap-1.5 text-amber-500">
+                          <Star className="w-4 h-4 fill-amber-500 shrink-0" />
+                          <span className="text-slate-850">{testimonialRating} Yıldız</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isTestimonialRatingOpen ? 'rotate-180 text-amber-500' : ''}`} />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {isTestimonialRatingOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-50 left-0 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-1"
+                          >
+                            {["5", "4", "3", "2", "1"].map((val) => {
+                              const isSelected = val === String(testimonialRating);
+                              return (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => {
+                                    setTestimonialRating(val);
+                                    setIsTestimonialRatingOpen(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors text-left font-bold ${
+                                    isSelected 
+                                      ? 'bg-amber-50 text-amber-600' 
+                                      : 'text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 text-amber-500">
+                                    <Star className="w-3.5 h-3.5 fill-amber-500 shrink-0" />
+                                    <span className="text-slate-700 font-bold">{val} Yıldız</span>
+                                  </div>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-amber-500" />}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   <div>
@@ -5210,7 +4333,7 @@ export default function AdminDashboard() {
                                   {order.amount ? order.amount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }) : '-'}
                                 </td>
                                 <td className="py-2.5 px-4 text-slate-500">
-                                  {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                                  {new Date(order.createdAt).toLocaleDateString('tr-TR')} ${new Date(order.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                                 </td>
                                 <td className="py-2.5 px-4 text-right">
                                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
@@ -5323,7 +4446,7 @@ export default function AdminDashboard() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] shadow-2xl flex flex-col"
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 shrink-0 bg-white">
@@ -5458,53 +4581,13 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
       {/* Modern Confirmation Dialog */}
-      <AnimatePresence>
-        {confirmDialog.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl p-6 flex flex-col items-center text-center space-y-4"
-            >
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${confirmDialog.type === 'danger' ? 'bg-rose-50 text-rose-500' : 'bg-amber-50 text-amber-500'}`}>
-                <AlertCircle className="w-8 h-8" />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-slate-900 font-sans">
-                  {confirmDialog.title}
-                </h3>
-                <p className="text-sm font-semibold text-slate-500 leading-relaxed max-w-sm">
-                  {confirmDialog.message}
-                </p>
-              </div>
-
-              <div className="flex w-full gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleConfirmClose(false)}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all"
-                >
-                  Vazgeç
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleConfirmClose(true)}
-                  className={`flex-1 py-3 text-white rounded-2xl text-xs font-bold transition-all shadow-md ${
-                    confirmDialog.type === 'danger'
-                      ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/10'
-                      : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/10'
-                  }`}
-                >
-                  Onayla
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        onClose={handleConfirmClose}
+      />
     </div>
   );
 }

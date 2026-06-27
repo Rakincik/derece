@@ -9,6 +9,7 @@ import FilterSidebar, { priceRanges } from '@/components/products/FilterSidebar'
 import Dropdown from '@/components/ui/Dropdown';
 
 const sortOptions = [
+  { value: 'recommended', label: 'Önerilen (Varsayılan)' },
   { value: 'popular', label: 'Popüler' },
   { value: 'newest', label: 'En Yeni' },
   { value: 'price-asc', label: 'Fiyat: Düşükten Yükseğe' },
@@ -25,7 +26,7 @@ export default function ProductsClient({ initialProducts }) {
 
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
   const [selectedPriceRange, setSelectedPriceRange] = useState(0);
-  const [sortBy, setSortBy] = useState('popular');
+  const [sortBy, setSortBy] = useState('recommended');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
@@ -78,6 +79,9 @@ export default function ProductsClient({ initialProducts }) {
     }
 
     switch (sortBy) {
+      case 'recommended':
+        filtered.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        break;
       case 'newest':
         filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
         break;

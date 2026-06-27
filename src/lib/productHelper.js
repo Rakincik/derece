@@ -81,6 +81,7 @@ export function mapProduct(p) {
     faqs: p.faqs || null,
     showOutcomes: p.showOutcomes !== undefined && p.showOutcomes !== null ? p.showOutcomes : true,
     categoryId: p.categoryId || null,
+    sortOrder: p.sortOrder !== undefined && p.sortOrder !== null ? p.sortOrder : 0,
   };
 }
 

@@ -29,8 +29,10 @@ export function middleware(request) {
   
   // 1. Canlı ortamda HTTP -> HTTPS yönlendirmesi yapıyoruz (Ters vekil sunucudan gelen protokole göre)
   const proto = request.headers.get('x-forwarded-proto');
-  if (proto === 'http') {
-    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+  
+  if (proto === 'http' && !isLocalhost) {
     return NextResponse.redirect(`https://${host}${pathname}${request.nextUrl.search}`, 301);
   }
   
