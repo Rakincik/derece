@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Shield, Zap, Headphones, RotateCcw } from 'lucide-react';
+import { Shield, Zap, Headphones } from 'lucide-react';
 
 const badges = [
   {
@@ -19,18 +19,13 @@ const badges = [
     title: '7/24 Destek',
     description: 'Teknik destek ekibimiz her zaman yanınızda',
   },
-  {
-    icon: RotateCcw,
-    title: 'İade Garantisi',
-    description: '14 gün içinde koşulsuz iade garantisi',
-  },
 ];
 
 export default function TrustBadges() {
   return (
     <section className="py-16 border-t border-slate-200 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8">
           {badges.map((badge, i) => {
             const Icon = badge.icon;
             return (

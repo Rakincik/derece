@@ -28,7 +28,7 @@ const defaultFaqs = [
   {
     id: '5',
     question: 'İade politikanız nedir?',
-    answer: 'Dijital ürünler doğası gereği indirilebilir içerik olduğundan, ürün dosyası indirilmemişse 14 gün içerisinde iade talebinde bulunabilirsiniz. Konuyla ilgili destek ekibimizle iletişime geçmeniz yeterlidir.'
+    answer: 'Satın alınan dijital ürünler (PDF kitaplar, video dersler ve online denemeler) anında kullanıma açılan dijital içerikler olduğundan, yasal mevzuat gereği iadesi veya iptali mümkün değildir.'
   }
 ];
 
