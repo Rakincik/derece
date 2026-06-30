@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, Mail, Lock, Download, Play, FileCheck, Clock, Package, LogIn, LogOut, ArrowRight, ShieldAlert, Phone, MapPin, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Download, Play, FileCheck, Clock, Package, LogIn, LogOut, ArrowRight, ShieldAlert, Phone, MapPin, CheckCircle2, Fingerprint } from 'lucide-react';
 import { turkeyCities } from '@/data/turkeyDb';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -27,6 +27,7 @@ function AccountPageContent() {
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
+  const [tcNo, setTcNo] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -109,13 +110,21 @@ function AccountPageContent() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    
+    // Front-end TC validation check
+    const tcStr = tcNo.trim();
+    if (!tcStr || tcStr.length !== 11 || !/^\d+$/.test(tcStr)) {
+      setError('T.C. Kimlik Numarası 11 haneli bir sayı olmalıdır.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, phone, city, district }),
+        body: JSON.stringify({ email, password, name, phone, city, district, tcNo: tcStr }),
       });
 
       const data = await res.json();
@@ -128,6 +137,7 @@ function AccountPageContent() {
         setPhone('');
         setCity('');
         setDistrict('');
+        setTcNo('');
       } else {
         setError(data.error || 'Kayıt işlemi başarısız.');
       }
@@ -271,6 +281,27 @@ function AccountPageContent() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Ahmet Yılmaz"
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 pl-1">
+                      T.C. Kimlik Numarası
+                    </label>
+                    <div className="relative group">
+                      <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" strokeWidth={1.5} />
+                      <input
+                        type="text"
+                        required
+                        maxLength={11}
+                        value={tcNo}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, ''); // digit only validation
+                          setTcNo(val);
+                        }}
+                        placeholder="11 haneli T.C. Kimlik No"
                         className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all"
                       />
                     </div>
@@ -437,6 +468,8 @@ function AccountPageContent() {
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs font-semibold text-slate-500">
+                  {user.tcNo && <span>T.C.: {user.tcNo}</span>}
+                  {user.tcNo && (user.phone || user.city || user.district) && <span className="text-slate-300">|</span>}
                   {user.phone && <span>Tel: {user.phone}</span>}
                   {user.phone && (user.city || user.district) && <span className="text-slate-300">|</span>}
                   {(user.city || user.district) && (

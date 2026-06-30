@@ -36,6 +36,7 @@ export async function GET(request) {
         phone: true,
         city: true,
         district: true,
+        tcNo: true,
         createdAt: true,
         orders: {
           where: {

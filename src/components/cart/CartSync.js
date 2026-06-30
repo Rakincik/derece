@@ -19,11 +19,11 @@ export default function CartSync() {
         const payload = {
           items: items.map(item => ({
             id: item.id,
-            title: item.title,
+            title: item.title || item.name,
             price: item.price,
             discountedPrice: item.discountedPrice,
             quantity: item.quantity,
-            coverImage: item.coverImage
+            coverImage: item.coverImage || item.cover
           })),
           subtotal: getSubtotal()
         };

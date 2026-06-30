@@ -4,12 +4,58 @@ import { hashPassword } from '@/lib/auth';
 
 export async function POST(request) {
   try {
-    const { email, password, name, phone, city, district } = await request.json();
+    const { email, password, name, phone, city, district, tcNo } = await request.json();
 
     // Temel girdi kontrolleri
-    if (!email || !password || !name || !phone || !city || !district) {
+    if (!email || !password || !name || !phone || !city || !district || !tcNo) {
       return NextResponse.json(
-        { error: 'Lütfen tüm alanları doldurun (Ad Soyad, E-posta, Şifre, Telefon, İl, İlçe).' },
+        { error: 'Lütfen tüm alanları doldurun (Ad Soyad, T.C. Kimlik No, E-posta, Şifre, Telefon, İl, İlçe).' },
+        { status: 400 }
+      );
+    }
+
+    // T.C. Kimlik Numarası Algoritmik Doğrulama
+    const tcStr = String(tcNo).trim();
+    if (tcStr.length !== 11 || tcStr[0] === '0' || !/^\d+$/.test(tcStr)) {
+      return NextResponse.json(
+        { error: 'Geçersiz T.C. Kimlik Numarası formatı.' },
+        { status: 400 }
+      );
+    }
+    
+    let oddSum = 0;
+    let evenSum = 0;
+    for (let i = 0; i < 9; i++) {
+      const digit = parseInt(tcStr[i], 10);
+      if (i % 2 === 0) oddSum += digit;
+      else evenSum += digit;
+    }
+    const calculated10 = ((oddSum * 7 - evenSum) % 10 + 10) % 10;
+    if (parseInt(tcStr[9], 10) !== calculated10) {
+      return NextResponse.json(
+        { error: 'Geçersiz T.C. Kimlik Numarası.' },
+        { status: 400 }
+      );
+    }
+    
+    let totalSum = 0;
+    for (let i = 0; i < 10; i++) {
+      totalSum += parseInt(tcStr[i], 10);
+    }
+    if (parseInt(tcStr[10], 10) !== totalSum % 10) {
+      return NextResponse.json(
+        { error: 'Geçersiz T.C. Kimlik Numarası.' },
+        { status: 400 }
+      );
+    }
+
+    // T.C. Kimlik Numarasının daha önce kullanılıp kullanılmadığını kontrol et
+    const existingTcUser = await prisma.user.findUnique({
+      where: { tcNo: tcStr },
+    });
+    if (existingTcUser) {
+      return NextResponse.json(
+        { error: 'Bu T.C. Kimlik Numarası zaten kullanımda.' },
         { status: 400 }
       );
     }
@@ -61,6 +107,7 @@ export async function POST(request) {
         phone: phone,
         city: city,
         district: district,
+        tcNo: tcStr,
       },
     });
 
@@ -75,6 +122,7 @@ export async function POST(request) {
           phone: user.phone,
           city: user.city,
           district: user.district,
+          tcNo: user.tcNo,
         },
       },
       { status: 201 }

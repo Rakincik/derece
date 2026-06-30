@@ -15,6 +15,8 @@ export default function StudentsTab({
   const [studentSortBy, setStudentSortBy] = useState('newest'); // 'name-asc', 'name-desc', 'email-asc', 'email-desc', 'newest', 'oldest', 'orders-desc', 'orders-asc'
   const [roleFilter, setRoleFilter] = useState(''); // '' (All), 'ADMIN', 'USER'
   const [enrollmentFilter, setEnrollmentFilter] = useState(''); // '' (All), 'enrolled', 'not-enrolled'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   const handleImpersonate = async (userId, userName) => {
     if (!window.confirm(`${userName} adlı kullanıcının hesabına giriş yapmak istediğinize emin misiniz?`)) return;
@@ -111,12 +113,22 @@ export default function StudentsTab({
     return 0;
   });
 
+  // Pagination Calculations
+  const totalItems = sortedUsers.length;
+  const isAll = itemsPerPage === 'all';
+  const totalPages = isAll ? 1 : Math.ceil(totalItems / itemsPerPage);
+  const effectiveCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = isAll ? 0 : (effectiveCurrentPage - 1) * itemsPerPage;
+  const endIndex = isAll ? totalItems : startIndex + Number(itemsPerPage);
+  const paginatedUsers = sortedUsers.slice(startIndex, endIndex);
+
   // Flawless HTML-based XLS export preserving Turkish characters and formatting
   const handleExportToExcel = () => {
-    const headers = ['Ad Soyad', 'E-Posta', 'Telefon', 'İl', 'İlçe', 'Kayıt Tarihi', 'Rol', 'Eğitim Sayısı'];
+    const headers = ['Ad Soyad', 'T.C. Kimlik No', 'E-Posta', 'Telefon', 'İl', 'İlçe', 'Kayıt Tarihi', 'Rol', 'Eğitim Sayısı'];
     
     const tableRows = sortedUsers.map(item => {
       const name = item.name || 'Girilmemiş';
+      const tcNo = item.tcNo || '-';
       const email = item.email || '-';
       const phone = item.phone || '-';
       const city = item.city || '-';
@@ -127,6 +139,7 @@ export default function StudentsTab({
       
       return `<tr>
         <td>${name}</td>
+        <td>${tcNo}</td>
         <td>${email}</td>
         <td>${phone}</td>
         <td>${city}</td>
@@ -307,7 +320,7 @@ export default function StudentsTab({
                 </tr>
               </thead>
               <tbody>
-                {sortedUsers.map((item) => (
+                {paginatedUsers.map((item) => (
                   <tr 
                     key={item.id} 
                     onClick={() => setSelectedUser(item)}
@@ -380,6 +393,78 @@ export default function StudentsTab({
           <div className="p-12 text-center text-slate-500">Kayıtlı kullanıcı bulunamadı.</div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {sortedUsers.length > 0 && (
+        <div className="flex flex-wrap gap-4 items-center justify-between bg-white border border-slate-200/80 px-6 py-4 rounded-3xl shadow-sm mt-4 animate-fade-in">
+          {/* Items Per Page Selector */}
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span>Sayfa Başına Göster:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                const val = e.target.value;
+                setItemsPerPage(val === 'all' ? 'all' : Number(val));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-bold focus:outline-none focus:border-slate-900 cursor-pointer"
+            >
+              <option value={20}>20</option>
+              <option value={40}>40</option>
+              <option value={60}>60</option>
+              <option value="all">Tümünü Göster</option>
+            </select>
+            {!isAll && (
+              <span className="text-slate-400 pl-2">
+                Gösterilen: {startIndex + 1}-{Math.min(endIndex, totalItems)} / Toplam: {totalItems}
+              </span>
+            )}
+            {isAll && (
+              <span className="text-slate-400 pl-2">
+                Toplam: {totalItems} kayıt gösteriliyor
+              </span>
+            )}
+          </div>
+
+          {/* Page Navigation Buttons */}
+          {!isAll && totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={effectiveCurrentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-650 font-bold text-xs disabled:opacity-40 transition-colors select-none"
+              >
+                Önceki
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-8 h-8 rounded-lg font-bold text-xs transition-colors select-none ${
+                    effectiveCurrentPage === p
+                      ? 'bg-amber-500 text-white'
+                      : 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-650'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                disabled={effectiveCurrentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-650 font-bold text-xs disabled:opacity-40 transition-colors select-none"
+              >
+                Sonraki
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

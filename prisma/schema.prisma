@@ -17,6 +17,7 @@ model User {
   phone     String?
   city      String?
   district  String?
+  tcNo      String?  @unique
   createdAt DateTime @default(now())
   orders    Order[]
   abandonedCart AbandonedCart?
