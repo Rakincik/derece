@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trash, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react';
 import AdminDropdown from '../shared/AdminDropdown';
 
 export default function StudentsTab({
@@ -17,43 +18,94 @@ export default function StudentsTab({
   const [enrollmentFilter, setEnrollmentFilter] = useState(''); // '' (All), 'enrolled', 'not-enrolled'
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  
+  // Custom Modal States
+  const [impersonateTarget, setImpersonateTarget] = useState(null);
+  const [passwordTarget, setPasswordTarget] = useState(null);
+  const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [notification, setNotification] = useState(null);
 
-  const handleImpersonate = async (userId, userName) => {
-    if (!window.confirm(`${userName} adlı kullanıcının hesabına giriş yapmak istediğinize emin misiniz?`)) return;
+  const handleImpersonate = (userId, userName) => {
+    setImpersonateTarget({ id: userId, name: userName });
+  };
+
+  const executeImpersonate = async () => {
+    if (!impersonateTarget) return;
+    const { id } = impersonateTarget;
+    setImpersonateTarget(null);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/impersonate`, { method: 'POST' });
+      const res = await fetch(`/api/admin/users/${id}/impersonate`, { method: 'POST' });
       if (res.ok) {
         window.location.href = '/hesabim';
       } else {
         const data = await res.json();
-        alert(data.error || 'Geçiş başarısız oldu.');
+        setNotification({
+          type: 'error',
+          title: 'Hata',
+          message: data.error || 'Geçiş başarısız oldu.'
+        });
       }
     } catch (err) {
-      alert('Bir hata oluştu.');
+      setNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Bir bağlantı hatası oluştu.'
+      });
     }
   };
 
-  const handleResetPassword = async (userId, userName) => {
-    const newPassword = window.prompt(`${userName} için yeni şifreyi giriniz (En az 6 karakter):`);
-    if (!newPassword) return;
-    if (newPassword.length < 6) {
-      alert('Şifre en az 6 karakter olmalıdır.');
+  const handleResetPassword = (userId, userName) => {
+    setPasswordTarget({ id: userId, name: userName });
+    setNewPasswordVal('');
+    setPasswordError('');
+  };
+
+  const executeResetPassword = async (e) => {
+    if (e) e.preventDefault();
+    if (!passwordTarget) return;
+    const { id } = passwordTarget;
+    
+    if (!newPasswordVal) {
+      setPasswordError('Lütfen bir şifre girin.');
       return;
     }
+    if (newPasswordVal.length < 6) {
+      setPasswordError('Şifre en az 6 karakter olmalıdır.');
+      return;
+    }
+    
+    setPasswordError('');
+    setPasswordTarget(null);
+    const passwordToSet = newPasswordVal;
+    setNewPasswordVal('');
+    
     try {
-      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+      const res = await fetch(`/api/admin/users/${id}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword })
+        body: JSON.stringify({ newPassword: passwordToSet })
       });
       if (res.ok) {
-        alert('Şifre başarıyla güncellendi.');
+        setNotification({
+          type: 'success',
+          title: 'Başarılı',
+          message: 'Şifre başarıyla güncellendi.'
+        });
       } else {
         const data = await res.json();
-        alert(data.error || 'Şifre güncellenemedi.');
+        setNotification({
+          type: 'error',
+          title: 'Hata',
+          message: data.error || 'Şifre güncellenemedi.'
+        });
       }
     } catch (err) {
-      alert('Bir hata oluştu.');
+      setNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Bir bağlantı hatası oluştu.'
+      });
     }
   };
 
@@ -465,6 +517,157 @@ export default function StudentsTab({
           )}
         </div>
       )}
+
+      <AnimatePresence>
+        {/* Impersonate Confirm Modal */}
+        {impersonateTarget && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-2xl p-6 flex flex-col items-center text-center space-y-4"
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-indigo-50 text-indigo-500">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900">
+                  Öğrenci Gözünden Giriş
+                </h3>
+                <p className="text-sm font-semibold text-slate-500 leading-relaxed max-w-sm">
+                  <span className="text-slate-800 font-extrabold">{impersonateTarget.name}</span> adlı kullanıcının hesabına giriş yapmak istediğinize emin misiniz?
+                </p>
+              </div>
+
+              <div className="flex w-full gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setImpersonateTarget(null)}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="button"
+                  onClick={executeImpersonate}
+                  className="flex-1 py-3 text-white rounded-2xl text-xs font-bold bg-indigo-500 hover:bg-indigo-600 shadow-md shadow-indigo-500/10 transition-all"
+                >
+                  Onayla
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Password Reset Modal */}
+        {passwordTarget && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] shadow-2xl p-6 space-y-4"
+            >
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-50 text-emerald-500">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3l5.257-5.257A6 6 0 1115 7h.01z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-md font-bold text-slate-900">Şifre Sıfırla</h3>
+                  <p className="text-[11px] font-semibold text-slate-500">{passwordTarget.name} kullanıcısı için</p>
+                </div>
+              </div>
+              
+              <form onSubmit={executeResetPassword} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 pl-1">Yeni Şifre</label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="En az 6 karakter girin"
+                    value={newPasswordVal}
+                    onChange={(e) => {
+                      setNewPasswordVal(e.target.value);
+                      if (passwordError) setPasswordError('');
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all text-sm"
+                  />
+                  {passwordError && (
+                    <p className="text-[11px] font-bold text-red-500 mt-1.5 pl-1">{passwordError}</p>
+                  )}
+                </div>
+
+                <div className="flex w-full gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasswordTarget(null);
+                      setNewPasswordVal('');
+                      setPasswordError('');
+                    }}
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 text-white rounded-2xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/10 transition-all"
+                  >
+                    Şifreyi Güncelle
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Status Notification Modal */}
+        {notification && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm bg-white border border-slate-200 rounded-[2rem] shadow-2xl p-6 flex flex-col items-center text-center space-y-4"
+            >
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                notification.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+              }`}>
+                {notification.type === 'success' ? (
+                  <CheckCircle2 className="w-8 h-8" />
+                ) : (
+                  <AlertCircle className="w-8 h-8" />
+                )}
+              </div>
+              
+              <div className="space-y-1.5">
+                <h3 className="text-md font-bold text-slate-900">
+                  {notification.title}
+                </h3>
+                <p className="text-xs font-semibold text-slate-500 leading-relaxed max-w-xs">
+                  {notification.message}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setNotification(null)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors"
+              >
+                Tamam
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
