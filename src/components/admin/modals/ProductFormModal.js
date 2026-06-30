@@ -19,6 +19,8 @@ export default function ProductFormModal({
   isBestseller, setIsBestseller,
   type, setType,
   categoryId, setCategoryId,
+  crossSellIds = [], setCrossSellIds,
+  products = [],
   coverImage, setCoverImage,
   description, setDescription,
   contents, setContents,
@@ -134,6 +136,37 @@ export default function ProductFormModal({
                       placeholder="Örn: 1"
                       className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
                     />
+                  </div>
+                </div>
+
+                {/* Cross-Sell Selection */}
+                <div className="pt-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 pl-1">Birlikte Satılacak Ürünler (Çapraz Satış Önerileri)</label>
+                  <p className="text-[10px] text-slate-400 mb-3 pl-1">Öğrenci bu ürünü sepete eklediğinde, sepet çekmecesinde öncelikli olarak önermek istediğiniz ürünleri seçin.</p>
+                  <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 max-h-[160px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 custom-scrollbar">
+                    {products.filter(p => p.id !== editingId).map(product => (
+                      <label key={product.id} className="flex items-start gap-3 cursor-pointer group bg-white p-2.5 rounded-xl border border-slate-200 hover:border-amber-400 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={crossSellIds.includes(product.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCrossSellIds([...crossSellIds, product.id]);
+                            } else {
+                              setCrossSellIds(crossSellIds.filter(id => id !== product.id));
+                            }
+                          }}
+                          className="mt-0.5 w-4 h-4 text-amber-500 border-slate-300 rounded focus:ring-amber-500/30"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-slate-700 truncate group-hover:text-amber-600 transition-colors">{product.title}</p>
+                          <p className="text-[10px] text-slate-400">{product.type}</p>
+                        </div>
+                      </label>
+                    ))}
+                    {products.length <= 1 && (
+                      <p className="text-xs text-slate-400 col-span-2 p-2">Eşleştirilecek başka ürün bulunamadı.</p>
+                    )}
                   </div>
                 </div>
               </div>

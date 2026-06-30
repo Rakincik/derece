@@ -8,7 +8,7 @@ import {
   PlayCircle, Play, FileCheck, HelpCircle, Mail, Key, Gift, Eye, MessageSquare, CheckSquare, Trash, Clock, Menu, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown,
   Layout, Star, LogOut,
   GraduationCap, Award, Calculator, Compass, Languages, Cpu, Sparkles, PenTool, History, FlaskConical, Globe,
-  LayoutGrid, List
+  LayoutGrid, List, ShoppingCart
 } from 'lucide-react';
 import Link from 'next/link';
 import { turkeyCities } from '@/data/turkeyDb';
@@ -19,6 +19,7 @@ import CouponsTab from './tabs/CouponsTab';
 import CategoriesTab from './tabs/CategoriesTab';
 import OrdersTab from './tabs/OrdersTab';
 import StudentsTab from './tabs/StudentsTab';
+import AbandonedCartsTab from './tabs/AbandonedCartsTab';
 import ProductFormModal from './modals/ProductFormModal';
 
 export default function AdminDashboard() {
@@ -28,9 +29,10 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [abandonedCarts, setAbandonedCarts] = useState([]);
   
   // Navigation
-  const [activeSection, setActiveSection] = useState('products'); // products, orders, users, coupons, messages, grant
+  const [activeSection, setActiveSection] = useState('products'); // products, orders, users, coupons, messages, grant, abandoned-carts
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Custom Confirmation Modal State
@@ -108,6 +110,7 @@ export default function AdminDashboard() {
   const [isUploadingInstructor, setIsUploadingInstructor] = useState(false);
   const [categoriesList, setCategoriesList] = useState([]);
   const [categoryId, setCategoryId] = useState('');
+  const [crossSellIds, setCrossSellIds] = useState([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [categoryName, setCategoryName] = useState('');
@@ -391,7 +394,7 @@ export default function AdminDashboard() {
     setIsLoading(true);
     setError('');
     try {
-      const [prodRes, ordRes, userRes, coupRes, msgRes, catRes, settingsRes, testimonialsRes] = await Promise.all([
+      const [prodRes, ordRes, userRes, coupRes, msgRes, catRes, settingsRes, testimonialsRes, cartsRes] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
         fetch('/api/admin/users'),
@@ -399,10 +402,11 @@ export default function AdminDashboard() {
         fetch('/api/admin/messages'),
         fetch('/api/admin/categories'),
         fetch('/api/admin/settings'),
-        fetch('/api/admin/testimonials')
+        fetch('/api/admin/testimonials'),
+        fetch('/api/admin/abandoned-carts')
       ]);
 
-      if (prodRes.ok && ordRes.ok && userRes.ok && coupRes.ok && msgRes.ok && catRes.ok && settingsRes.ok && testimonialsRes.ok) {
+      if (prodRes.ok && ordRes.ok && userRes.ok && coupRes.ok && msgRes.ok && catRes.ok && settingsRes.ok && testimonialsRes.ok && cartsRes.ok) {
         const prodData = await prodRes.json();
         const ordData = await ordRes.json();
         const userData = await userRes.json();
@@ -411,6 +415,7 @@ export default function AdminDashboard() {
         const catData = await catRes.json();
         const settingsData = await settingsRes.json();
         const testimonialsData = await testimonialsRes.json();
+        const cartsData = await cartsRes.json();
         
         setProducts(prodData.products || []);
         setOrders(ordData.orders || []);
@@ -418,6 +423,7 @@ export default function AdminDashboard() {
         setCoupons(coupData.coupons || []);
         setMessages(msgData.messages || []);
         setCategoriesList(catData.categories || []);
+        setAbandonedCarts(cartsData.abandonedCarts || []);
         
         const s = settingsData.settings || {};
         setHomeSettings(s);
@@ -664,6 +670,7 @@ export default function AdminDashboard() {
     setIsBestseller(false);
     setType('Video Ders Seti');
     setCategoryId(categoriesList[0]?.id || '');
+    setCrossSellIds([]);
     setCoverImage('/covers/kombo.png');
     setDescription('');
     setContents([]);
@@ -716,6 +723,7 @@ export default function AdminDashboard() {
     setInstructorAvatar(product.instructorAvatar || 'E');
     setInstructorImage(product.instructorImage || '');
     setCategoryId(product.categoryId || '');
+    setCrossSellIds(product.crossSellIds || []);
     setIsModalOpen(true);
   };
 
@@ -751,7 +759,8 @@ export default function AdminDashboard() {
       instructorAvatar,
       instructorImage,
       categoryId: categoryId || null,
-      sortOrder: sortOrder ? parseInt(sortOrder) : 0
+      sortOrder: sortOrder ? parseInt(sortOrder) : 0,
+      crossSellIds: crossSellIds || []
     };
 
     try {
@@ -1472,6 +1481,7 @@ export default function AdminDashboard() {
       icon: MessageSquare,
       badge: messages.filter(m => m.status === 'UNREAD').length 
     },
+    { id: 'abandoned-carts', label: 'Terkedilmiş Sepetler', icon: ShoppingCart, badge: abandonedCarts.length },
     { id: 'grant', label: 'Manuel Erişim Tanımla', icon: Key },
   ];
 
@@ -1612,12 +1622,28 @@ export default function AdminDashboard() {
             
             {/* Top Bar for Desktop */}
             <div className="hidden md:flex items-center justify-between gap-6 border-b border-slate-200 pb-6 mb-8">
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                  {sidebarItems.find(item => item.id === activeSection)?.label}
-                </h1>
-                <p className="text-slate-500 text-xs mt-1 font-semibold">DereceUzem Eğitim Yönetim Sistemi</p>
-              </div>
+              {activeSection === 'users' && (
+                <div className="flex flex-col">
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Öğrenciler</h1>
+                  <p className="text-sm font-medium text-slate-500 mt-1">Sisteme kayıtlı tüm kullanıcıları yönetin.</p>
+                </div>
+              )}
+
+              {activeSection === 'abandoned-carts' && (
+                <div className="flex flex-col">
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Terkedilmiş Sepetler</h1>
+                  <p className="text-sm font-medium text-slate-500 mt-1">Öğrencilerin sepetlerinde bıraktıkları ürünleri görüntüleyin.</p>
+                </div>
+              )}
+
+              {activeSection !== 'users' && activeSection !== 'abandoned-carts' && (
+                <div>
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                    {sidebarItems.find(item => item.id === activeSection)?.label}
+                  </h1>
+                  <p className="text-slate-500 text-xs mt-1 font-semibold">DereceUzem Eğitim Yönetim Sistemi</p>
+                </div>
+              )}
               
               <div className="flex items-center gap-3">
                 {activeSection === 'products' && (
@@ -1729,7 +1755,7 @@ export default function AdminDashboard() {
             </AnimatePresence>
 
             {/* Global Search Bar (Only shown for lists: orders, users, coupons, messages) */}
-            {activeSection !== 'grant' && activeSection !== 'products' && (
+            {activeSection !== 'grant' && activeSection !== 'products' && activeSection !== 'abandoned-carts' && (
               <div className="mb-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
                 <div className="relative flex-1 min-w-[240px] md:min-w-[320px] max-w-md">
                   <input
@@ -1868,7 +1894,7 @@ export default function AdminDashboard() {
                           )}
                         </div>
 
-                                                {/* Category Filter */}
+                        {/* Category Filter */}
                         <AdminDropdown
                           value={productFilterCategory}
                           onChange={setProductFilterCategory}
@@ -1907,7 +1933,7 @@ export default function AdminDashboard() {
                         />
                       </div>
                       
-{/* View Switcher Controls */}
+                      {/* View Switcher Controls */}
                       <div className="flex items-center gap-2 border-l border-slate-100 pl-0 xl:pl-4 justify-end">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 hidden sm:inline-block">Görünüm:</span>
                         <div className="flex bg-slate-105 bg-slate-100 p-1 rounded-xl gap-0.5 border border-slate-200/60">
@@ -2145,7 +2171,7 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                                {/* Orders Log */}
+                {/* Orders Log */}
                 {activeSection === 'orders' && (
                   <OrdersTab
                     orders={orders}
@@ -2183,6 +2209,11 @@ export default function AdminDashboard() {
                     handleToggleCouponStatus={handleToggleCouponStatus}
                     handleDeleteCoupon={handleDeleteCoupon}
                   />
+                )}
+                
+                {/* Abandoned Carts Management Section */}
+                {activeSection === 'abandoned-carts' && (
+                  <AbandonedCartsTab abandonedCarts={abandonedCarts} />
                 )}
                 
                 {/* Support Messages Management Section */}
@@ -3543,6 +3574,8 @@ export default function AdminDashboard() {
         isBestseller={isBestseller} setIsBestseller={setIsBestseller}
         type={type} setType={setType}
         categoryId={categoryId} setCategoryId={setCategoryId}
+        crossSellIds={crossSellIds} setCrossSellIds={setCrossSellIds}
+        products={products}
         coverImage={coverImage} setCoverImage={setCoverImage}
         description={description} setDescription={setDescription}
         contents={contents} setContents={setContents}

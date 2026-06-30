@@ -36,6 +36,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isImpersonating, setIsImpersonating] = useState(false);
   const { openCart, getItemCount } = useCartStore();
   const itemCount = useCartStore((state) => state.items.reduce((c, i) => c + i.quantity, 0));
 
@@ -44,8 +45,24 @@ export default function Navbar() {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    if (document.cookie.includes('is_impersonating=true')) {
+      setIsImpersonating(true);
+    }
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleRevertImpersonate = async () => {
+    try {
+      const res = await fetch('/api/auth/revert-impersonate', { method: 'POST' });
+      if (res.ok) {
+        window.location.href = '/admin';
+      } else {
+        alert('Geri dönüş başarısız.');
+      }
+    } catch (err) {
+      alert('Bir hata oluştu.');
+    }
+  };
 
   const [categoriesSubItems, setCategoriesSubItems] = useState([
     { href: '/urunler?category=dijital-kitap', label: 'Dijital Kitaplar', desc: 'PDF ve ePub formatında', icon: BookOpen },
@@ -111,6 +128,17 @@ export default function Navbar() {
           : 'bg-transparent'
       }`}
     >
+      {isImpersonating && (
+        <div className="bg-red-500 text-white text-xs font-bold text-center py-2 px-4 flex items-center justify-center gap-4">
+          <span>Şu an bir öğrenci olarak sistemi inceliyorsunuz.</span>
+          <button 
+            onClick={handleRevertImpersonate}
+            className="bg-white text-red-500 px-3 py-1 rounded-full hover:bg-red-50 transition-colors shadow-sm"
+          >
+            Admin'e Geri Dön
+          </button>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}

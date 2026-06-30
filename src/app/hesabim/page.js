@@ -33,6 +33,15 @@ function AccountPageContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Şifre Değiştirme State'leri
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [isPwLoading, setIsPwLoading] = useState(false);
+
   // Sayfa yüklendiğinde aktif oturumu kontrol et
   useEffect(() => {
     fetchProfile();
@@ -139,6 +148,44 @@ function AccountPageContent() {
       }
     } catch (err) {
       console.error('Çıkış hatası:', err);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess('');
+
+    if (newPassword !== newPasswordConfirm) {
+      setPwError('Yeni şifreler eşleşmiyor.');
+      return;
+    }
+
+    setIsPwLoading(true);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setPwSuccess('Şifreniz başarıyla değiştirildi.');
+        setOldPassword('');
+        setNewPassword('');
+        setNewPasswordConfirm('');
+        setTimeout(() => {
+          setIsPasswordModalOpen(false);
+          setPwSuccess('');
+        }, 2000);
+      } else {
+        setPwError(data.error || 'Şifre değiştirilemedi.');
+      }
+    } catch (err) {
+      setPwError('Bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setIsPwLoading(false);
     }
   };
 
@@ -415,6 +462,16 @@ function AccountPageContent() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-slate-100 text-slate-700 text-sm hover:bg-slate-200 transition-colors"
+              >
+                <Lock className="w-4 h-4" />
+                Şifre Değiştir
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold bg-slate-100 text-slate-700 text-sm hover:bg-slate-200 transition-colors"
               >
@@ -539,6 +596,85 @@ function AccountPageContent() {
               >
                 Eğitimlerime Git
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Şifre Değiştirme Modalı */}
+      <AnimatePresence>
+        {isPasswordModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white max-w-md w-full rounded-[2rem] p-8 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Kapat
+              </button>
+              
+              <div className="mb-6">
+                <h3 className="text-xl font-black text-slate-900 mb-2">Şifremi Değiştir</h3>
+                <p className="text-sm text-slate-500 font-medium">Hesap güvenliğiniz için yeni bir şifre belirleyin.</p>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {pwError && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-red-50 text-red-600 text-xs font-semibold p-3 rounded-xl border border-red-100 mb-4">
+                    {pwError}
+                  </motion.div>
+                )}
+                {pwSuccess && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-emerald-50 text-emerald-600 text-xs font-semibold p-3 rounded-xl border border-emerald-100 mb-4">
+                    {pwSuccess}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 pl-1">Mevcut Şifre</label>
+                  <input
+                    type="password"
+                    required
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:bg-white focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 transition-all outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 pl-1">Yeni Şifre</label>
+                  <input
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:bg-white focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 transition-all outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 pl-1">Yeni Şifre (Tekrar)</label>
+                  <input
+                    type="password"
+                    required
+                    value={newPasswordConfirm}
+                    onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:bg-white focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 transition-all outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isPwLoading}
+                  className="w-full py-3.5 mt-2 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                >
+                  {isPwLoading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
+                </button>
+              </form>
             </motion.div>
           </div>
         )}

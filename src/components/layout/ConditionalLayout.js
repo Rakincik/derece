@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import WhatsAppButton from '@/components/layout/WhatsAppButton';
 import SmoothScroll from '@/components/layout/SmoothScroll';
+import CartSync from '@/components/cart/CartSync';
 
 const CartDrawer = dynamic(() => import('@/components/cart/CartDrawer'), { ssr: false });
 
@@ -24,6 +25,7 @@ export default function ConditionalLayout({ children }) {
 
   return (
     <SmoothScroll>
+      <CartSync />
       <Navbar />
       <CartDrawer />
       <main className="min-h-screen pt-16 lg:pt-20">

@@ -8,6 +8,7 @@ import CartItem from './CartItem';
 import CouponInput from './CouponInput';
 import Button from '@/components/ui/Button';
 import { formatPrice } from '@/lib/productHelper';
+import Link from 'next/link';
 
 
 export default function CartDrawer() {
@@ -42,6 +43,41 @@ export default function CartDrawer() {
   const [installments, setInstallments] = useState([]);
   const [selectedInstallment, setSelectedInstallment] = useState(null);
   const [lastFetchedBin, setLastFetchedBin] = useState('');
+
+  // Cross-sell states
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
+
+  // Fetch Cross Sells
+  useEffect(() => {
+    if (items.length === 0) {
+      setRecommendedProducts([]);
+      return;
+    }
+
+    const fetchCrossSells = async () => {
+      setIsLoadingRecommendations(true);
+      try {
+        const itemIds = items.map(item => item.id);
+        const res = await fetch('/api/products/cross-sells', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cartItemIds: itemIds })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setRecommendedProducts(data.products || []);
+        }
+      } catch (err) {
+        console.error('Error fetching cross-sells:', err);
+      } finally {
+        setIsLoadingRecommendations(false);
+      }
+    };
+
+    fetchCrossSells();
+  }, [items]);
 
   // Fetch installments when card BIN (first 6 digits) is typed
   const cleanCardNumber = cardNumber.replace(/\s+/g, '');
@@ -289,12 +325,53 @@ export default function CartDrawer() {
               ) : (
                 <>
                   {/* Items List */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     <AnimatePresence>
                       {items.map((item) => (
                         <CartItem key={item.id} item={item} />
                       ))}
                     </AnimatePresence>
+
+                    {/* Cross-Sell Recommendations */}
+                    {recommendedProducts.length > 0 && (
+                      <div className="mt-6 pt-4 border-t border-slate-100">
+                        <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Bunu Alanlar Şunu Da Aldı</h4>
+                        <div className="space-y-3">
+                          {recommendedProducts.map((product) => (
+                            <div key={product.id} className="flex gap-3 bg-slate-50/50 border border-slate-200/60 p-3 rounded-xl hover:border-amber-400/50 transition-colors">
+                              <div className="w-16 h-20 bg-white rounded-lg overflow-hidden border border-slate-100 shrink-0">
+                                <img src={product.coverImage || '/placeholder.png'} alt={product.title} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 flex flex-col justify-center min-w-0">
+                                <Link href={`/urun/${product.slug}`} onClick={closeCart} className="text-sm font-bold text-slate-800 line-clamp-2 hover:text-amber-600 transition-colors">
+                                  {product.title}
+                                </Link>
+                                <div className="mt-1 flex items-center justify-between">
+                                  <div className="font-mono text-sm font-bold text-accent-600">
+                                    {formatPrice(product.discountedPrice || product.price)}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      useCartStore.getState().addItem({
+                                        id: product.id,
+                                        title: product.title,
+                                        price: product.discountedPrice || product.price,
+                                        coverImage: product.coverImage,
+                                        quantity: 1
+                                      });
+                                    }}
+                                    className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white rounded-lg transition-colors"
+                                  >
+                                    Ekle
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Coupon */}

@@ -19,6 +19,7 @@ model User {
   district  String?
   createdAt DateTime @default(now())
   orders    Order[]
+  abandonedCart AbandonedCart?
 }
 
 model Product {
@@ -52,6 +53,7 @@ model Product {
   categoryId      String?
   category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   sortOrder       Int      @default(0)
+  crossSellIds    String[] @default([]) // Manuel seçilen önerilen ürün ID'leri
   createdAt       DateTime @default(now())
   orders          Order[]
 }
@@ -117,5 +119,14 @@ model Testimonial {
   rating    Int
   comment   String   @db.Text
   createdAt DateTime @default(now())
+}
+
+model AbandonedCart {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     Json     // Sepetteki ürün detayları
+  subtotal  Float
+  updatedAt DateTime @updatedAt
 }
 
