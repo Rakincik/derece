@@ -82,7 +82,7 @@ export async function POST(request) {
       showDemo, demoUrl, showFaq, faqs,
       showOutcomes, categoryId,
       showInstructor, instructorName, instructorExperience, instructorDescription, instructorAvatar, instructorImage,
-      sortOrder
+      sortOrder, crossSellIds, lmsCourseId
     } = body;
 
     // Validation
@@ -148,6 +148,8 @@ export async function POST(request) {
         instructorImage: instructorImage || null,
         categoryId: categoryId || null,
         sortOrder: sortOrder !== undefined && sortOrder !== '' && sortOrder !== null ? parseInt(sortOrder) : 0,
+        crossSellIds: Array.isArray(crossSellIds) ? crossSellIds : [],
+        lmsCourseId: lmsCourseId || null,
       },
     });
 

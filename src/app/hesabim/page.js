@@ -616,19 +616,51 @@ function AccountPageContent() {
               <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
                 Başarılı!
               </h3>
-              <p className="text-sm font-semibold text-slate-600 mb-8 leading-relaxed px-2">
+              <p className="text-sm font-semibold text-slate-600 mb-5 leading-relaxed px-2">
                 Ödemeniz başarıyla alınmıştır.
               </p>
 
-              <button
-                onClick={() => {
-                  setShowPaymentSuccess(false);
-                  router.replace('/hesabim');
-                }}
-                className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black text-sm hover:bg-emerald-600 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-[0.98] transition-all"
-              >
-                Eğitimlerime Git
-              </button>
+              {/* LMS Bilgi Kutusu */}
+              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-left mb-8 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <Play className="w-4 h-4 text-emerald-600" />
+                  <h4 className="text-xs font-black text-emerald-800 uppercase tracking-wide">Video Ders & Kurs Erişimi</h4>
+                </div>
+                <p className="text-[11px] font-medium text-emerald-700 leading-relaxed mb-3">
+                  Satın aldığınız video derslere <strong>LMS Panelimizden</strong> aşağıdaki bilgilerle hemen giriş yapabilirsiniz:
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-emerald-100/50">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kullanıcı Adı</span>
+                    <span className="text-xs font-bold text-slate-700">Telefon No (0 olmadan)</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-emerald-100/50">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Şifre</span>
+                    <span className="text-xs font-bold text-slate-700">E-Posta Adresiniz</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <a 
+                  href="https://dereceuzem.okinar.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  LMS Paneline Giriş Yap
+                </a>
+                <button
+                  onClick={() => {
+                    setShowPaymentSuccess(false);
+                    router.replace('/hesabim');
+                  }}
+                  className="w-full py-3.5 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold text-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
+                >
+                  Daha Sonra
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Home, LayoutGrid, ShoppingCart, User } from 'lucide-react';
+import { Home, LayoutGrid, ShoppingCart, User, PlayCircle } from 'lucide-react';
 import useCartStore from '@/store/cartStore';
 
 const navItems = [
   { href: '/', label: 'Ana Sayfa', icon: Home },
   { href: '/urunler', label: 'Ürünler', icon: LayoutGrid },
+  { href: 'https://dereceuzem.okinar.com/account/login', label: 'Ders Paneli', icon: PlayCircle, isExternal: true },
   { href: '#cart', label: 'Sepet', icon: ShoppingCart, isCart: true },
   { href: '/hesabim', label: 'Hesabım', icon: User },
 ];
@@ -56,24 +57,36 @@ export default function MobileNav() {
             );
           }
 
+          const innerContent = (
+            <motion.div
+              whileTap={{ scale: 0.9 }}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${
+                isActive ? 'text-accent-400' : 'text-slate-400'
+              }`}
+            >
+              <Icon className="w-5 h-5" strokeWidth={1.5} />
+              <span className="text-[10px] font-medium">{item.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="mobile-nav-indicator"
+                  className="absolute bottom-0 w-8 h-0.5 bg-accent-400 rounded-full"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+            </motion.div>
+          );
+
+          if (item.isExternal) {
+            return (
+              <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer">
+                {innerContent}
+              </a>
+            );
+          }
+
           return (
             <Link key={item.label} href={item.href}>
-              <motion.div
-                whileTap={{ scale: 0.9 }}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${
-                  isActive ? 'text-accent-400' : 'text-slate-400'
-                }`}
-              >
-                <Icon className="w-5 h-5" strokeWidth={1.5} />
-                <span className="text-[10px] font-medium">{item.label}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="mobile-nav-indicator"
-                    className="absolute bottom-0 w-8 h-0.5 bg-accent-400 rounded-full"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
-              </motion.div>
+              {innerContent}
             </Link>
           );
         })}

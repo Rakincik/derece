@@ -111,6 +111,7 @@ export default function AdminDashboard() {
   const [categoriesList, setCategoriesList] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [crossSellIds, setCrossSellIds] = useState([]);
+  const [lmsCourseId, setLmsCourseId] = useState('');
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [categoryName, setCategoryName] = useState('');
@@ -671,6 +672,7 @@ export default function AdminDashboard() {
     setType('Video Ders Seti');
     setCategoryId(categoriesList[0]?.id || '');
     setCrossSellIds([]);
+    setLmsCourseId('');
     setCoverImage('/covers/kombo.png');
     setDescription('');
     setContents([]);
@@ -724,6 +726,7 @@ export default function AdminDashboard() {
     setInstructorImage(product.instructorImage || '');
     setCategoryId(product.categoryId || '');
     setCrossSellIds(product.crossSellIds || []);
+    setLmsCourseId(product.lmsCourseId || '');
     setIsModalOpen(true);
   };
 
@@ -760,7 +763,8 @@ export default function AdminDashboard() {
       instructorImage,
       categoryId: categoryId || null,
       sortOrder: sortOrder ? parseInt(sortOrder) : 0,
-      crossSellIds: crossSellIds || []
+      crossSellIds: crossSellIds || [],
+      lmsCourseId: lmsCourseId || null
     };
 
     try {
@@ -3575,6 +3579,7 @@ export default function AdminDashboard() {
         type={type} setType={setType}
         categoryId={categoryId} setCategoryId={setCategoryId}
         crossSellIds={crossSellIds} setCrossSellIds={setCrossSellIds}
+        lmsCourseId={lmsCourseId} setLmsCourseId={setLmsCourseId}
         products={products}
         coverImage={coverImage} setCoverImage={setCoverImage}
         description={description} setDescription={setDescription}

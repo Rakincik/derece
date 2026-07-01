@@ -20,6 +20,7 @@ export default function ProductFormModal({
   type, setType,
   categoryId, setCategoryId,
   crossSellIds = [], setCrossSellIds,
+  lmsCourseId, setLmsCourseId,
   products = [],
   coverImage, setCoverImage,
   description, setDescription,
@@ -137,6 +138,19 @@ export default function ProductFormModal({
                       className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/5 transition-all text-sm font-semibold shadow-sm"
                     />
                   </div>
+                </div>
+
+                {/* LMS Entegrasyonu */}
+                <div>
+                  <label className="block text-[11px] font-black text-amber-600 uppercase tracking-wider mb-1.5 pl-1">Okinar LMS Grup / Kurs ID (Opsiyonel)</label>
+                  <input 
+                    type="text" 
+                    value={lmsCourseId || ''}
+                    onChange={(e) => setLmsCourseId(e.target.value)}
+                    placeholder="Örn: 397 (Okinar gruplar sayfasından alınır)"
+                    className="w-full px-4 py-3 bg-amber-50/30 border border-amber-200/50 focus:border-amber-500 rounded-2xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/10 transition-all text-sm font-semibold shadow-sm"
+                  />
+                  <p className="text-[10px] text-slate-400 font-semibold mt-1.5 pl-2">Bu ürün satıldığında öğrenci otomatik olarak bu numaralı gruba atanır.</p>
                 </div>
 
                 {/* Cross-Sell Selection */}

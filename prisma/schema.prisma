@@ -55,6 +55,7 @@ model Product {
   category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   sortOrder       Int      @default(0)
   crossSellIds    String[] @default([]) // Manuel seçilen önerilen ürün ID'leri
+  lmsCourseId     String?  // Okinar tarafındaki Grup/Kurs ID'si
   createdAt       DateTime @default(now())
   orders          Order[]
 }
@@ -69,6 +70,7 @@ model Order {
   paymentStatus String   @default("PENDING") // PENDING, SUCCESS, FAILED
   paymentId     String?
   createdAt     DateTime @default(now())
+  lmsQueue      LmsQueue?
 }
 
 model Coupon {
@@ -128,6 +130,17 @@ model AbandonedCart {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     Json     // Sepetteki ürün detayları
   subtotal  Float
+  updatedAt DateTime @updatedAt
+}
+
+model LmsQueue {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String   @default("PENDING") // PENDING, PROCESSING, SUCCESS, FAILED
+  attempts  Int      @default(0)
+  error     String?  @db.Text
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
