@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="en"><head>
+	<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<title>Derece Uzem Uzaktan Eğitim Paneli</title>
+<link rel="icon" href="https://dereceuzem.okinar.com//assets/customize/derece.ico" type="image/x-icon">
+
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://dereceuzem.okinar.com/assets/plugins/fontawesome-free/css/all.min.css">
+<!-- Ionicons -->
+<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+<!-- overlayScrollbars -->
+<link rel="stylesheet" href="https://dereceuzem.okinar.com/assets/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+<!-- Theme style -->
+<link rel="stylesheet" href="https://dereceuzem.okinar.com/assets/dist/css/adminlte.min.css">
+<!-- Google Font: Source Sans Pro -->
+<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+<!-- Extra Style -->
+<style type="text/css">
+	.sbi{
+		width:25px;
+	}
+	.bg-okico{
+		background-color: #1b75bc!important;
+		color: white!important;
+	}
+	.nav-link.active{
+		/*background-color: #1b75bc!important;*/
+	}
+	.btn-primary{
+		background-color: #1b75bc!important;
+		box-shadow: none;
+		color: #ffffff;
+	}
+	.page-item.active .page-link {
+		background-color: #1b75bc;
+		border-color: #1b75bc;
+	}
+	.bellhover:hover{
+		transform: rotate(20deg);
+		color: #1b75bc;
+	}
+</style>
+<!-- Page Style -->
+</head>
+<body class="login-page" style="min-height: 310.781px;">
+
+<!-- Modal -->
+<div class="modal fade" id="forgot">
+	<div class="modal-dialog modal-md">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="modal_title">Şifremi Unuttum </h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">×</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-md-12 col-lg-12 text-center">
+						<i class="fas fa-envelope fa-3x mb-3 mt-3 text-lightblue"></i><h3>Şifrenizi öğrenin</h3>
+						<br>
+						<div class="input-group mb-3">
+							<input type="email" class="form-control" name="email" id="email" placeholder="E-Posta adresiniz" required="">
+							<div class="input-group-append">
+								<div class="input-group-text">
+									<i class="fas fa-envelope"></i>
+								</div>
+							</div>
+						</div>
+
+						<p>Hatırlatma postası alacaksınız.</p>
+						<br>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer justify-content-right">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Vazgeç</button>
+				<button type="button" class="btn btn-success" data-dismiss="modal" onclick="send_mail()">Tamam</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="login-box">
+	<div class="login-logo">
+		<img class="logoclass" src="https://dereceuzem.okinar.com/assets/customize/derece.png" width="50%">
+	</div>
+	<!-- /.login-logo -->
+	<div class="card">
+		<div class="card-body login-card-body rounded-pill">
+			<p class="login-box-msg">Oturum Aç</p>
+
+			<form action="login_control" method="post">
+				<div class="input-group mb-3">
+					<input type="text" class="form-control" name="username" id="username" placeholder="Telefon" tabindex="1" aria-selected="true">
+					<div class="input-group-append">
+						<div class="input-group-text">
+							<i class="fas fa-phone"></i>
+						</div>
+					</div>
+				</div>
+				<div class="input-group mb-3">
+					<input type="password" class="form-control" name="password" id="password" tabindex="2" placeholder="Parola">
+					<div class="input-group-append">
+						<div class="input-group-text">
+							<span class="fas fa-lock"></span>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-8 pt-1">
+						<div class="icheck-primary">
+							<small><a style="color: #737679;" onclick="btn_forgot()" href="#" class="text-center">Şifremi Unuttum</a></small>
+						</div>
+					</div>
+					<!-- /.col -->
+					<div class="col-4">
+						<button type="button" id="btnLogin" class="btn btn-success btn-block" tabindex="3">Giriş</button>
+					</div>
+					<!-- /.col -->
+				</div>
+
+			</form>
+
+
+			<!-- /.social-auth-links -->
+
+		</div>
+		<!-- /.login-card-body -->
+	</div>
+</div>
+<!-- /.login-box -->
+
+<!-- jQuery -->
+<script src="https://dereceuzem.okinar.com/assets/plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="https://dereceuzem.okinar.com/assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- AdminLTE App -->
+<script src="https://dereceuzem.okinar.com/assets/dist/js/adminlte.min.js"></script>
+<!-- AdminLTE for demo purposes -->
+<script src="https://dereceuzem.okinar.com/assets/dist/js/demo.js"></script>
+
+<!-- Page Script -->
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#username').empty();
+    	$('#username').focus();
+    });
+    $(document).ready(function () {
+        $("#btnLogin").click(function () {
+            var username=$("#username").val();
+            var password=$("#password").val();
+            $.ajax({
+                url: 'login_control',
+                type: 'POST',
+                dataType: 'json',
+                data: { username: username, password: password },
+                success: function (gelen) {
+
+                    $( ".logoclass" ).animate({
+                        opacity: 0,
+                        width: "+=30%"
+                    }, 1000, function() {
+                        window.location.replace('https://dereceuzem.okinar.com/dashboard');
+                    });
+
+                    $( "div .card" ).animate({
+                        opacity: 0,
+                    }, 200, function() {
+                    });
+
+                },
+                error: function (hata) {
+                    $("div .card").fadeOut();
+                    $("div .card").fadeIn();
+                }
+            });
+        });
+    });
+
+	function btn_forgot(){
+		$('#forgot').modal();
+	}
+
+	function send_mail(){
+		var email=$("#email").val();
+
+		$.ajax({
+			url: 'https://dereceuzem.okinar.com/email/forgot',
+			type: 'POST',
+			dataType: 'json',
+			data: { email:email},
+			success: function (data) {
+				$("input").val("");
+				$('#forgot').modal();
+			},
+			error: function (hata) {
+				$("input").val("");
+
+			}
+		});
+
+	}
+
+
+</script>
+
+    <script>
+        $(document).ready(function () {
+            $(document).keydown(function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    $("#btnLogin").trigger("click"); 
+                }
+            });
+        });
+    </script>
+    
+
+
+</body></html>

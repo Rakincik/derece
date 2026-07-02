@@ -191,10 +191,14 @@ export default function CartDrawer() {
     setIsProcessing(true);
     setCheckoutError('');
     
-    if (!cardHolder || !cardNumber || !cardExpiry || !cardCvv) {
-      setCheckoutError('Lütfen tüm kart alanlarını doldurun.');
-      setIsProcessing(false);
-      return;
+    const isFreeCheckout = getTotal() === 0;
+
+    if (!isFreeCheckout) {
+      if (!cardHolder || !cardNumber || !cardExpiry || !cardCvv) {
+        setCheckoutError('Lütfen tüm kart alanlarını doldurun.');
+        setIsProcessing(false);
+        return;
+      }
     }
     
     try {
@@ -209,10 +213,10 @@ export default function CartDrawer() {
           items: items.map(item => ({ id: item.id })),
           couponCode: couponCode,
           cardName: cardHolder,
-          cardNumber: cardNumber.replace(/\s+/g, ''),
+          cardNumber: cardNumber ? cardNumber.replace(/\s+/g, '') : '',
           expiryMonth: expiryMonth,
           expiryYear: expiryYear,
-          cvv: parseInt(cardCvv, 10),
+          cvv: cardCvv ? parseInt(cardCvv, 10) : 0,
           installmentCount: selectedInstallment ? selectedInstallment.count : 1
         })
       });
@@ -229,6 +233,24 @@ export default function CartDrawer() {
           if (form) {
             form.submit();
           }
+          return;
+        }
+        if (data.freeCheckout) {
+          // 0 TL Bypass flow successful
+          setCheckoutSuccess(true);
+          setTimeout(() => {
+            clearCart();
+            setIsCheckoutModalOpen(false);
+            setCheckoutSuccess(false);
+            closeCart();
+            // Clear inputs
+            setCardHolder('');
+            setCardNumber('');
+            setCardExpiry('');
+            setCardCvv('');
+            // Redirect to account dashboard
+            window.location.href = '/hesabim';
+          }, 2000);
           return;
         }
 
@@ -465,7 +487,7 @@ export default function CartDrawer() {
                 ) : (
                   <form onSubmit={handleProcessCheckout} className="space-y-3 sm:space-y-4">
                     {/* Real-time Mock Card Graphic */}
-                    {(() => {
+                    {getTotal() > 0 && (() => {
                       const cardStyle = getCardStyle();
                       return (
                         <div className={`aspect-[1.586/1] w-full rounded-2xl bg-gradient-to-br ${cardStyle.gradient} p-4 sm:p-5 shadow-2xl flex flex-col justify-between relative overflow-hidden border border-white/10 transition-all duration-500`}>
@@ -519,8 +541,9 @@ export default function CartDrawer() {
                     )}
 
                     {/* Form Fields */}
-                    <div className="space-y-2.5 sm:space-y-3">
-                      <div>
+                    {getTotal() > 0 ? (
+                      <div className="space-y-2.5 sm:space-y-3">
+                        <div>
                         <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5 sm:mb-1 pl-1">KART SAHİBİ ADI</label>
                         <input
                           type="text"
@@ -592,17 +615,26 @@ export default function CartDrawer() {
                           />
                         </div>
                       </div>
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-center space-y-2 my-4">
+                        <div className="w-10 h-10 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <h4 className="font-bold text-emerald-600">Ücretsiz İşlem</h4>
+                        <p className="text-xs text-emerald-600/80">Sepetiniz 0 TL olduğu için kredi kartı bilgisi girmenize gerek yoktur. Aşağıdaki butona tıklayarak işlemi doğrudan tamamlayabilirsiniz.</p>
+                      </div>
+                    )}
 
                     {/* Installment Options Grid */}
-                    {isCheckingBin && (
+                    {getTotal() > 0 && isCheckingBin && (
                       <div className="py-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2 bg-slate-50 rounded-xl border border-slate-200">
                         <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                         <span>Taksit seçenekleri sorgulanıyor...</span>
                       </div>
                     )}
 
-                    {!isCheckingBin && installments.length > 0 && (
+                    {getTotal() > 0 && !isCheckingBin && installments.length > 0 && (
                       <div className="space-y-1.5 sm:space-y-2">
                         <label className="block text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">TAKSİT SEÇENEKLERİ</label>
                         <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 divide-y divide-slate-200 text-[11px] sm:text-xs max-h-[100px] overflow-y-auto custom-scrollbar">

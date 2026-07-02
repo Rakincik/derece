@@ -37,13 +37,6 @@ export async function POST(request) {
       );
     }
 
-    if (!cardName || !cardNumber || !expiryMonth || !expiryYear || !cvv) {
-      return NextResponse.json(
-        { error: 'Lütfen kredi kartı bilgilerini eksiksiz doldurun.' },
-        { status: 400 }
-      );
-    }
-
     // 3. Retrieve and validate products from Database to prevent client price-tampering
     const productIds = items.map(item => item.id.toString());
     
@@ -137,8 +130,8 @@ export async function POST(request) {
     const finalInstallmentCount = installmentCount ? parseInt(installmentCount, 10) : 1;
     let commissionRate = 0;
 
-    if (finalInstallmentCount > 1) {
-      const cleanCardNumber = cardNumber.replace(/\s+/g, '');
+    if (baseTotal > 0 && finalInstallmentCount > 1) {
+      const cleanCardNumber = (cardNumber || '').replace(/\s+/g, '');
       if (cleanCardNumber.length < 6) {
         return NextResponse.json(
           { error: 'Geçersiz kart numarası.' },
@@ -180,6 +173,16 @@ export async function POST(request) {
     }
 
     const total = Math.max(0, baseTotal + (baseTotal * commissionRate) / 100);
+    const isFreeCheckout = total === 0;
+
+    if (!isFreeCheckout) {
+      if (!cardName || !cardNumber || !expiryMonth || !expiryYear || !cvv) {
+        return NextResponse.json(
+          { error: 'Lütfen kredi kartı bilgilerini eksiksiz doldurun.' },
+          { status: 400 }
+        );
+      }
+    }
 
     // 6. Generate a transaction payment ID (Must be unique and fit inside Param's Siparis_ID length <= 50)
     const randomPart = Math.random().toString(36).substring(2, 10);
@@ -221,35 +224,76 @@ export async function POST(request) {
       }
     });
 
-    // 8. Initiate 3D Secure payment with Param POS
+    // 8. Initiate 3D Secure payment with Param POS (or bypass if 0 TL)
     try {
-      const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
-      
-      // Success/Fail Redirect endpoints
-      const successUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/checkout/callback`;
-      const failUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/checkout/callback`;
+      if (isFreeCheckout) {
+        // --- 0 TL BYPASS LOGIC ---
+        // 1. Mark orders as SUCCESS
+        await prisma.order.updateMany({
+          where: { paymentId },
+          data: { paymentStatus: 'SUCCESS' }
+        });
 
-      const redirectFormHtml = await init3DPayment({
-        orderId: paymentId,
-        amount: total,
-        cardHolderName: cardName,
-        cardNumber: cardNumber.replace(/\s+/g, ''),
-        expireMonth: expiryMonth.toString().padStart(2, '0'),
-        expireYear: expiryYear.toString().length === 2 ? '20' + expiryYear : expiryYear.toString(),
-        cvv: cvv.toString(),
-        successUrl,
-        failUrl,
-        clientIp,
-        installmentCount: finalInstallmentCount,
-        // Send coupon details in Data1 metadata field so we can increment coupon count in the callback route
-        data1: coupon ? coupon.code : ''
-      });
+        // 2. Add to LMS Queue for each product that has lmsCourseId
+        for (const product of dbProducts) {
+          if (product.lmsCourseId) {
+            const order = createdOrders.find(o => o.productId === product.id);
+            if (order) {
+              await prisma.lmsQueue.create({
+                data: {
+                  orderId: order.id,
+                  lmsCourseId: product.lmsCourseId,
+                  status: 'PENDING'
+                }
+              });
+            }
+          }
+        }
 
-      return NextResponse.json({
-        message: '3D Secure başlatıldı.',
-        '3dForm': redirectFormHtml,
-        paymentId
-      }, { status: 201 });
+        // 3. Increment coupon usage if used
+        if (coupon) {
+          await prisma.coupon.update({
+            where: { id: coupon.id },
+            data: { uses: { increment: 1 } }
+          });
+        }
+
+        return NextResponse.json({
+          message: 'Ücretsiz işlem başarıyla tamamlandı.',
+          freeCheckout: true,
+          paymentId
+        }, { status: 200 });
+
+      } else {
+        // --- NORMAL PARAM POS 3D SECURE FLOW ---
+        const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
+        
+        // Success/Fail Redirect endpoints
+        const successUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/checkout/callback`;
+        const failUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/checkout/callback`;
+
+        const redirectFormHtml = await init3DPayment({
+          orderId: paymentId,
+          amount: total,
+          cardHolderName: cardName,
+          cardNumber: cardNumber.replace(/\s+/g, ''),
+          expireMonth: expiryMonth.toString().padStart(2, '0'),
+          expireYear: expiryYear.toString().length === 2 ? '20' + expiryYear : expiryYear.toString(),
+          cvv: cvv.toString(),
+          successUrl,
+          failUrl,
+          clientIp,
+          installmentCount: finalInstallmentCount,
+          // Send coupon details in Data1 metadata field so we can increment coupon count in the callback route
+          data1: coupon ? coupon.code : ''
+        });
+
+        return NextResponse.json({
+          message: '3D Secure başlatıldı.',
+          '3dForm': redirectFormHtml,
+          paymentId
+        }, { status: 201 });
+      }
 
     } catch (paramErr) {
       console.error('Param POS 3D Init Hatası:', paramErr);
