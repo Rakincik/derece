@@ -55,16 +55,21 @@ export async function POST(request) {
       console.log(`Param POS Capture Successful for Order ID: ${orderId}`);
 
       // 4. Update order status to SUCCESS and fetch product details
-      const updatedOrder = await prisma.order.update({
-        where: { paymentId: orderId },
-        data: { paymentStatus: 'SUCCESS' },
-        include: { product: true }
+      const existingOrder = await prisma.order.findFirst({
+        where: { paymentId: orderId }
       });
 
+      let updatedOrder = null;
+      if (existingOrder) {
+        updatedOrder = await prisma.order.update({
+          where: { id: existingOrder.id },
+          data: { paymentStatus: 'SUCCESS' },
+          include: { product: true }
+        });
+      }
+
       // 4.1 Queue LMS registration if product has lmsCourseId
-      // KULLANICI ISTEGI UZERINE BOT OZELLIGI GECICI OLARAK TAMAMEN IPTAL EDILDI (Devre disi)
-      /*
-      if (updatedOrder.product?.lmsCourseId) {
+      if (updatedOrder && updatedOrder.product?.lmsCourseId) {
         try {
           await prisma.lmsQueue.create({
             data: {
@@ -77,7 +82,6 @@ export async function POST(request) {
           console.error('LMS Queue create error:', qErr);
         }
       }
-      */
 
       // 5. Parse coupon code from paymentId and increment its use count
       // Format is tr_[random]_[couponCode]
