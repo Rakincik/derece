@@ -118,6 +118,21 @@ export async function POST(request) {
       },
     });
 
+    // 5. Add to LMS Queue if the product has an lmsCourseId
+    if (product.lmsCourseId) {
+      try {
+        await prisma.lmsQueue.create({
+          data: {
+            orderId: order.id,
+            status: 'PENDING'
+          }
+        });
+        console.log(`Manual Grant: LMS Queue added for Order: ${order.id}, Course: ${product.lmsCourseId}`);
+      } catch (qErr) {
+        console.error('Manual Grant: LMS Queue create error:', qErr);
+      }
+    }
+
     return NextResponse.json(
       { message: 'Ürün erişimi kullanıcıya başarıyla tanımlandı.', order },
       { status: 201 }
