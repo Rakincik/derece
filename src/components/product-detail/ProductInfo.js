@@ -50,7 +50,7 @@ export default function ProductInfo({ product }) {
       )}
 
       {/* Description */}
-      <p className="text-slate-600 leading-relaxed">
+      <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
         {product.description}
       </p>
 
