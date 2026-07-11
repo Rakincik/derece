@@ -135,13 +135,12 @@ async function runWorker() {
         await page.click('button[data-target="#modal-register"]');
         await page.waitForSelector('#modal-register', { visible: true, timeout: 10000 });
         
-        // 3. Formu Doldur
-        let rawPhone = user.phone || '';
-        if (rawPhone.startsWith('0')) rawPhone = rawPhone.substring(1);
-        const lmsPhone = rawPhone.replace(/\s+/g, '');
-        const lmsEmail = user.email;
+        // 3. Formu Doldur (Ad-soyad sonundaki/başındaki boşlukları trimle ve telefonu 10 haneli formatta temizle)
+        const digits = (user.phone || '').replace(/\D/g, '');
+        const lmsPhone = digits.length >= 10 ? digits.slice(-10) : digits;
+        const lmsEmail = (user.email || '').trim();
         
-        const nameParts = (user.name || 'Öğrenci').split(' ');
+        const nameParts = (user.name || 'Öğrenci').trim().split(/\s+/);
         const surname = nameParts.length > 1 ? nameParts.pop() : 'Öğrenci';
         const firstName = nameParts.join(' ') || 'Öğrenci';
         
