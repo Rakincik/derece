@@ -23,7 +23,8 @@ function AccountPageContent() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
@@ -111,17 +112,14 @@ function AccountPageContent() {
     setError('');
     setSuccess('');
     
-    // Front-end Ad Soyad validation check (En az iki kelime olmalı)
-    const nameStr = name.trim();
-    if (!nameStr) {
-      setError('Lütfen Ad Soyad alanını doldurun.');
+    // Front-end Ad ve Soyad validation
+    const fName = firstName.trim();
+    const lName = lastName.trim();
+    if (!fName || !lName) {
+      setError('Lütfen Ad ve Soyad alanlarını doldurun.');
       return;
     }
-    const nameParts = nameStr.split(/\s+/);
-    if (nameParts.length < 2) {
-      setError('Lütfen hem adınızı hem de soyadınızı girin (örn: Ahmet Yılmaz).');
-      return;
-    }
+    const fullName = `${fName} ${lName}`;
     
     // Front-end TC validation check
     const tcStr = tcNo.trim();
@@ -150,7 +148,7 @@ function AccountPageContent() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, phone: cleanPhone, city, district, tcNo: tcStr }),
+        body: JSON.stringify({ email, password, name: fullName, phone: cleanPhone, city, district, tcNo: tcStr }),
       });
 
       const data = await res.json();
@@ -158,7 +156,8 @@ function AccountPageContent() {
       if (res.ok) {
         setSuccess('Kayıt başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.');
         setIsRegistering(false); // Giriş formuna yönlendir
-        setName('');
+        setFirstName('');
+        setLastName('');
         setPassword('');
         setPhone('');
         setCity('');
@@ -295,20 +294,39 @@ function AccountPageContent() {
             <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-5">
               {isRegistering && (
                 <>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 pl-1">
-                      Ad Soyad
-                    </label>
-                    <div className="relative group">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" strokeWidth={1.5} />
-                      <input
-                        type="text"
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ahmet Yılmaz"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all"
-                      />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 pl-1">
+                        Ad
+                      </label>
+                      <div className="relative group">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" strokeWidth={1.5} />
+                        <input
+                          type="text"
+                          required
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="Ahmet"
+                          className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 pl-1">
+                        Soyad
+                      </label>
+                      <div className="relative group">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" strokeWidth={1.5} />
+                        <input
+                          type="text"
+                          required
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder="Yılmaz"
+                          className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
 
