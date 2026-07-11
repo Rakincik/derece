@@ -118,13 +118,27 @@ function AccountPageContent() {
       return;
     }
 
+    // Telefon Numarası Kontrolü (Başında 0 olmamalı ve 10 haneli olmalı)
+    const phoneStr = phone.trim();
+    const cleanPhone = phoneStr.replace(/\D/g, '');
+    
+    if (cleanPhone.startsWith('0')) {
+      setError('Telefon numarasının başı sıfır (0) olamaz.');
+      return;
+    }
+    
+    if (cleanPhone.length !== 10) {
+      setError('Telefon numarası 10 haneli olmalıdır (örn: 5xx xxx xx xx).');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, phone, city, district, tcNo: tcStr }),
+        body: JSON.stringify({ email, password, name, phone: cleanPhone, city, district, tcNo: tcStr }),
       });
 
       const data = await res.json();
@@ -318,7 +332,7 @@ function AccountPageContent() {
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="05xx xxx xx xx"
+                        placeholder="5xx xxx xx xx"
                         className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all"
                       />
                     </div>

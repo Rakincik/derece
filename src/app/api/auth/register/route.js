@@ -14,6 +14,22 @@ export async function POST(request) {
       );
     }
 
+    // Telefon Numarası Kontrolü ve Temizliği (Başında 0 olmamalı ve 10 haneli olmalı)
+    const phoneStr = String(phone).trim();
+    const cleanPhone = phoneStr.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) {
+      return NextResponse.json(
+        { error: 'Telefon numarasının başı sıfır (0) olamaz.' },
+        { status: 400 }
+      );
+    }
+    if (cleanPhone.length !== 10) {
+      return NextResponse.json(
+        { error: 'Telefon numarası 10 haneli olmalıdır (örn: 5xx xxx xx xx).' },
+        { status: 400 }
+      );
+    }
+
     // T.C. Kimlik Numarası Algoritmik Doğrulama
     const tcStr = String(tcNo).trim();
     if (tcStr.length !== 11 || tcStr[0] === '0' || !/^\d+$/.test(tcStr)) {
@@ -104,7 +120,7 @@ export async function POST(request) {
         salt,
         name: name,
         role,
-        phone: phone,
+        phone: cleanPhone,
         city: city,
         district: district,
         tcNo: tcStr,

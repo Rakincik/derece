@@ -73,6 +73,22 @@ export async function POST(request) {
       );
     }
 
+    // Telefon Numarası Kontrolü ve Temizliği (Başında 0 olmamalı ve 10 haneli olmalı)
+    const phoneStr = String(phone).trim();
+    const cleanPhone = phoneStr.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) {
+      return NextResponse.json(
+        { error: 'Telefon numarasının başı sıfır (0) olamaz.' },
+        { status: 400 }
+      );
+    }
+    if (cleanPhone.length !== 10) {
+      return NextResponse.json(
+        { error: 'Telefon numarası 10 haneli olmalıdır (örn: 5xx xxx xx xx).' },
+        { status: 400 }
+      );
+    }
+
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'Şifre en az 6 karakterden oluşmalıdır.' },
@@ -112,7 +128,7 @@ export async function POST(request) {
         salt,
         name,
         role,
-        phone,
+        phone: cleanPhone,
         city,
         district,
       },
