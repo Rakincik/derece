@@ -73,6 +73,15 @@ export async function POST(request) {
       );
     }
 
+    // Ad Soyad Kontrolü (En az iki kelime olmalı)
+    const nameStr = String(name).trim();
+    if (nameStr.split(/\s+/).length < 2) {
+      return NextResponse.json(
+        { error: 'Lütfen hem adınızı hem de soyadınızı girin (örn: Ahmet Yılmaz).' },
+        { status: 400 }
+      );
+    }
+
     // Telefon Numarası Kontrolü ve Temizliği (Başında 0 olmamalı ve 10 haneli olmalı)
     const phoneStr = String(phone).trim();
     const cleanPhone = phoneStr.replace(/\D/g, '');

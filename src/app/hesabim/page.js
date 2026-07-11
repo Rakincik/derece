@@ -111,6 +111,18 @@ function AccountPageContent() {
     setError('');
     setSuccess('');
     
+    // Front-end Ad Soyad validation check (En az iki kelime olmalı)
+    const nameStr = name.trim();
+    if (!nameStr) {
+      setError('Lütfen Ad Soyad alanını doldurun.');
+      return;
+    }
+    const nameParts = nameStr.split(/\s+/);
+    if (nameParts.length < 2) {
+      setError('Lütfen hem adınızı hem de soyadınızı girin (örn: Ahmet Yılmaz).');
+      return;
+    }
+    
     // Front-end TC validation check
     const tcStr = tcNo.trim();
     if (!tcStr || tcStr.length !== 11 || !/^\d+$/.test(tcStr)) {
