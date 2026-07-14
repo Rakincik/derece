@@ -23,7 +23,7 @@ export async function PUT(request, { params }) {
 
     const { id } = params;
     const body = await request.json();
-    const { status } = body;
+    const { status, reply } = body;
 
     const existingMessage = await prisma.contactMessage.findUnique({
       where: { id },
@@ -33,20 +33,40 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Mesaj bulunamadı.' }, { status: 404 });
     }
 
-    if (!status || (status !== 'READ' && status !== 'RESOLVED' && status !== 'UNREAD')) {
+    const updateData = {};
+
+    if (status !== undefined) {
+      if (status !== 'READ' && status !== 'RESOLVED' && status !== 'UNREAD') {
+        return NextResponse.json(
+          { error: 'Geçersiz mesaj durumu.' },
+          { status: 400 }
+        );
+      }
+      updateData.status = status;
+    }
+
+    if (reply !== undefined) {
+      updateData.reply = reply;
+      updateData.repliedAt = reply ? new Date() : null;
+      if (reply && (!status || status === 'UNREAD')) {
+        updateData.status = 'RESOLVED';
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: 'Geçersiz mesaj durumu.' },
+        { error: 'Güncellenecek veri sağlanmadı.' },
         { status: 400 }
       );
     }
 
     const messageDetail = await prisma.contactMessage.update({
       where: { id },
-      data: { status },
+      data: updateData,
     });
 
     return NextResponse.json({
-      message: 'Mesaj durumu başarıyla güncellendi.',
+      message: reply ? 'Cevabınız başarıyla kaydedildi.' : 'Mesaj durumu başarıyla güncellendi.',
       messageDetail,
     });
   } catch (error) {

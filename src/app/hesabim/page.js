@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, Mail, Lock, Download, Play, FileCheck, Clock, Package, LogIn, LogOut, ArrowRight, ShieldAlert, Phone, MapPin, CheckCircle2, Fingerprint } from 'lucide-react';
+import { User, Mail, Lock, Download, Play, FileCheck, Clock, Package, LogIn, LogOut, ArrowRight, ShieldAlert, Phone, MapPin, CheckCircle2, Fingerprint, MessageSquare, CornerDownRight } from 'lucide-react';
 import { turkeyCities } from '@/data/turkeyDb';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -43,6 +43,77 @@ function AccountPageContent() {
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
   const [isPwLoading, setIsPwLoading] = useState(false);
+
+  // Destek Talepleri State'leri
+  const [activeProfileTab, setActiveProfileTab] = useState('courses');
+  const [supportMessages, setSupportMessages] = useState([]);
+  const [isSupportLoading, setIsSupportLoading] = useState(false);
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportError, setSupportError] = useState('');
+  const [supportSuccess, setSupportSuccess] = useState('');
+  const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
+  const [showNewSupportForm, setShowNewSupportForm] = useState(false);
+
+  const fetchSupportMessages = async () => {
+    setIsSupportLoading(true);
+    try {
+      const res = await fetch('/api/student/messages');
+      if (res.ok) {
+        const data = await res.json();
+        setSupportMessages(data.messages || []);
+      }
+    } catch (err) {
+      console.error('Destek mesajları yükleme hatası:', err);
+    } finally {
+      setIsSupportLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && activeProfileTab === 'support') {
+      fetchSupportMessages();
+    }
+  }, [isLoggedIn, activeProfileTab]);
+
+  const handleCreateSupportMessage = async (e) => {
+    e.preventDefault();
+    setSupportError('');
+    setSupportSuccess('');
+    
+    const msg = supportMessage.trim();
+    if (!msg) {
+      setSupportError('Lütfen mesajınızı yazın.');
+      return;
+    }
+
+    setIsSubmittingSupport(true);
+    try {
+      const res = await fetch('/api/student/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: supportSubject.trim() || 'Genel Destek',
+          message: msg
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSupportSuccess('Destek talebiniz başarıyla oluşturuldu.');
+        setSupportSubject('');
+        setSupportMessage('');
+        setShowNewSupportForm(false);
+        fetchSupportMessages();
+      } else {
+        setSupportError(data.error || 'Destek talebi oluşturulamadı.');
+      }
+    } catch (err) {
+      setSupportError('Bağlantı hatası oluştu.');
+    } finally {
+      setIsSubmittingSupport(false);
+    }
+  };
 
   // Sayfa yüklendiğinde aktif oturumu kontrol et
   useEffect(() => {
@@ -561,78 +632,262 @@ function AccountPageContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Section Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center">
-            <Package className="w-5 h-5 text-slate-700" strokeWidth={2} />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900">Eğitimlerim</h2>
-          <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-sm font-bold">
-            {purchasedProducts.length}
-          </span>
+        {/* Tab Buttons */}
+        <div className="flex items-center gap-4 border-b border-slate-200 pb-5 mb-8">
+          <button
+            onClick={() => setActiveProfileTab('courses')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all ${
+              activeProfileTab === 'courses'
+                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10'
+                : 'text-slate-650 hover:bg-slate-100 hover:text-slate-950'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            Eğitimlerim
+            <span className={`px-2 py-0.5 rounded-full text-xs ${
+              activeProfileTab === 'courses' ? 'bg-white/20 text-white' : 'bg-slate-105 text-slate-550'
+            }`}>
+              {purchasedProducts.length}
+            </span>
+          </button>
+          
+          <button
+            onClick={() => setActiveProfileTab('support')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all ${
+              activeProfileTab === 'support'
+                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10'
+                : 'text-slate-650 hover:bg-slate-100 hover:text-slate-950'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            Destek Taleplerim
+          </button>
         </div>
 
-        {/* Products List */}
-        {purchasedProducts.length > 0 ? (
-          <div className="space-y-4">
-            {purchasedProducts.map((product, i) => {
-              const actionConfig = actionLabels[product.type] || { label: 'Eriş', icon: Play };
-              const ActionIcon = actionConfig.icon;
+        {/* Courses List Section */}
+        {activeProfileTab === 'courses' && (
+          <>
+            {purchasedProducts.length > 0 ? (
+              <div className="space-y-4">
+                {purchasedProducts.map((product, i) => {
+                  const actionConfig = actionLabels[product.type] || { label: 'Eriş', icon: Play };
+                  const ActionIcon = actionConfig.icon;
 
-              return (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.08 }}
-                  className="bg-white rounded-2xl p-5 flex flex-col sm:flex-row gap-5 items-start sm:items-center shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                  return (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.08 }}
+                      className="bg-white rounded-2xl p-5 flex flex-col sm:flex-row gap-5 items-start sm:items-center shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                    >
+                      {/* Image */}
+                      <div className="w-20 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200 relative">
+                        <img
+                          src={product.coverImage || '/covers/deneme.png'}
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-slate-900 text-lg mb-2">{product.title}</h3>
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">{product.type}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shrink-0 ${
+                          product.type === 'Video Ders Seti' || product.type === 'Kombo Paket'
+                            ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-lg' 
+                            : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                        }`}
+                      >
+                        <ActionIcon className="w-4 h-4" strokeWidth={2} />
+                        {actionConfig.label}
+                      </motion.button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm max-w-md mx-auto">
+                <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" strokeWidth={1.5} />
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Henüz Eğitim Satın Alınmamış</h3>
+                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                  Kataloğumuzdaki zengin dijital ders kitapları, denemeler ve video kursları inceleyerek eğitiminize hemen başlayın.
+                </p>
+                <Link href="/urunler">
+                  <button className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-colors">
+                    Eğitimleri Keşfet
+                  </button>
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Support Section */}
+        {activeProfileTab === 'support' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Destek Talepleriniz</h3>
+                <p className="text-slate-500 text-xs font-semibold mt-0.5">Teknik sorunlar ve sorularınız için destek talebi oluşturun.</p>
+              </div>
+              {!showNewSupportForm && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowNewSupportForm(true);
+                    setSupportError('');
+                    setSupportSuccess('');
+                  }}
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 text-white font-bold text-sm shadow-md shadow-amber-500/10 hover:bg-amber-600 transition-all cursor-pointer"
                 >
-                  {/* Image */}
-                  <div className="w-20 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200 relative">
-                    <img
-                      src={product.coverImage || '/covers/deneme.png'}
-                      alt={product.title}
-                      className="w-full h-full object-cover"
+                  Yeni Destek Talebi
+                </motion.button>
+              )}
+            </div>
+
+            {/* New Support Request Form */}
+            {showNewSupportForm && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-slate-800 text-sm">Yeni Destek Talebi Oluştur</h4>
+                  <button
+                    onClick={() => setShowNewSupportForm(false)}
+                    className="text-xs font-bold text-slate-400 hover:text-slate-650"
+                  >
+                    Vazgeç
+                  </button>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {supportError && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-red-50 text-red-650 text-xs font-semibold p-4 rounded-xl border border-red-100 flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 shrink-0" />
+                      <span>{supportError}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <form onSubmit={handleCreateSupportMessage} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Konu</label>
+                    <input
+                      type="text"
+                      value={supportSubject}
+                      onChange={(e) => setSupportSubject(e.target.value)}
+                      placeholder="Destek talebinizin konusu (örn: Eğitim Paketine Erişim Sorunu)"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all font-medium"
                     />
                   </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-900 text-lg mb-2">{product.title}</h3>
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">{product.type}</span>
-                    </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Mesajınız *</label>
+                    <textarea
+                      required
+                      value={supportMessage}
+                      onChange={(e) => setSupportMessage(e.target.value)}
+                      placeholder="Sorunuzu veya karşılaştığınız problemi detaylıca buraya yazın..."
+                      rows={5}
+                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 transition-all resize-none font-medium"
+                    />
                   </div>
 
-                  {/* Action Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shrink-0 ${
-                      product.type === 'Video Ders Seti' || product.type === 'Kombo Paket'
-                        ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-lg' 
-                        : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-                    }`}
+                  <button
+                    type="submit"
+                    disabled={isSubmittingSupport}
+                    className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-colors disabled:opacity-50"
                   >
-                    <ActionIcon className="w-4 h-4" strokeWidth={2} />
-                    {actionConfig.label}
-                  </motion.button>
-                </motion.div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm max-w-md mx-auto">
-            <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Henüz Eğitim Satın Alınmamış</h3>
-            <p className="text-slate-500 text-sm leading-relaxed mb-6">
-              Kataloğumuzdaki zengin dijital ders kitapları, denemeler ve video kursları inceleyerek eğitiminize hemen başlayın.
-            </p>
-            <Link href="/urunler">
-              <button className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-colors">
-                Eğitimleri Keşfet
-              </button>
-            </Link>
+                    {isSubmittingSupport ? 'Gönderiliyor...' : 'Talebi Gönder'}
+                  </button>
+                </form>
+              </motion.div>
+            )}
+
+            {/* Success feedback outside form */}
+            {supportSuccess && (
+              <div className="bg-emerald-50 text-emerald-600 text-xs font-semibold p-4 rounded-xl border border-emerald-100 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{supportSuccess}</span>
+              </div>
+            )}
+
+            {/* Loading / List / Empty State */}
+            {isSupportLoading ? (
+              <div className="space-y-4">
+                {[1, 2].map((n) => (
+                  <div key={n} className="bg-white rounded-3xl p-6 border border-slate-200/80 animate-pulse h-32" />
+                ))}
+              </div>
+            ) : supportMessages.length > 0 ? (
+              <div className="space-y-4">
+                {supportMessages.map((msg) => (
+                  <div key={msg.id} className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm flex flex-col justify-between gap-4 hover:border-slate-350 transition-all">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-black text-slate-800">{msg.subject || 'Destek Talebi'}</span>
+                          <span className="text-slate-200 text-xs">|</span>
+                          <span className="text-xs text-slate-455 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            {new Date(msg.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          msg.status === 'RESOLVED'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                            : 'bg-amber-50 text-amber-600 border-amber-100'
+                        }`}>
+                          {msg.status === 'RESOLVED' ? 'CEVAPLANDI' : 'BEKLEMEDE'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-650 leading-relaxed font-medium bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                        {msg.message}
+                      </p>
+                    </div>
+
+                    {/* Admin Reply */}
+                    {msg.reply && (
+                      <div className="ml-4 p-4 bg-amber-500/[0.03] rounded-2xl border border-amber-500/10 space-y-1">
+                        <div className="flex items-center gap-2 text-xs font-black text-amber-600">
+                          <CornerDownRight className="w-3.5 h-3.5" />
+                          Destek Ekibi Cevabı
+                          {msg.repliedAt && (
+                            <span className="text-[10px] text-slate-400 font-medium font-mono">
+                              ({new Date(msg.repliedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })})
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                          {msg.reply}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm max-w-md mx-auto">
+                <MessageSquare className="w-12 h-12 text-slate-350 mx-auto mb-4" strokeWidth={1.5} />
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Destek Talebiniz Bulunmuyor</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  Karşılaştığınız herhangi bir sorunda veya sorunuz olduğunda yeni bir talep oluşturarak bizimle paylaşabilirsiniz.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

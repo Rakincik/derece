@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Trash, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, AlertCircle, CheckCircle2, Shield } from 'lucide-react';
 import AdminDropdown from '../shared/AdminDropdown';
 
 export default function StudentsTab({
@@ -301,13 +301,13 @@ export default function StudentsTab({
 
       <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
         {sortedUsers.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto lg:overflow-x-visible">
+            <table className="w-full text-left border-collapse table-auto">
               <thead>
                 <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50 whitespace-nowrap">
                   <th 
                     onClick={() => setStudentSortBy(studentSortBy === 'name-asc' ? 'name-desc' : 'name-asc')}
-                    className="py-4 px-3 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
+                    className="py-3 px-2 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
                   >
                     <div className="flex items-center gap-1">
                       <span>Ad Soyad</span>
@@ -322,7 +322,7 @@ export default function StudentsTab({
                   </th>
                   <th 
                     onClick={() => setStudentSortBy(studentSortBy === 'email-asc' ? 'email-desc' : 'email-asc')}
-                    className="py-4 px-3 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
+                    className="py-3 px-2 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
                   >
                     <div className="flex items-center gap-1">
                       <span>E-Posta</span>
@@ -335,11 +335,11 @@ export default function StudentsTab({
                       )}
                     </div>
                   </th>
-                  <th className="py-4 px-3">Telefon</th>
-                  <th className="py-4 px-3">Konum (İl/İlçe)</th>
+                  <th className="py-3 px-2">Telefon</th>
+                  <th className="py-3 px-2">Konum (İl/İlçe)</th>
                   <th 
                     onClick={() => setStudentSortBy(studentSortBy === 'newest' ? 'oldest' : 'newest')}
-                    className="py-4 px-3 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
+                    className="py-3 px-2 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group"
                   >
                     <div className="flex items-center gap-1">
                       <span>Kayıt Tarihi</span>
@@ -352,10 +352,10 @@ export default function StudentsTab({
                       )}
                     </div>
                   </th>
-                  <th className="py-4 px-3">Rol / Yetki</th>
+                  <th className="py-3 px-2">Rol / Yetki</th>
                   <th 
                     onClick={() => setStudentSortBy(studentSortBy === 'orders-desc' ? 'orders-asc' : 'orders-desc')}
-                    className="py-4 px-3 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group text-center"
+                    className="py-3 px-2 cursor-pointer hover:text-slate-800 hover:bg-slate-100/50 transition-all select-none group text-center"
                   >
                     <div className="flex items-center justify-center gap-1">
                       <span>Eğitim Sayısı</span>
@@ -368,7 +368,7 @@ export default function StudentsTab({
                       )}
                     </div>
                   </th>
-                  <th className="py-4 px-3 text-right">Aksiyonlar</th>
+                  <th className="py-3 px-2 text-right">Aksiyonlar</th>
                 </tr>
               </thead>
               <tbody>
@@ -379,21 +379,21 @@ export default function StudentsTab({
                     className="border-b border-slate-100 hover:bg-slate-50 transition-colors text-sm cursor-pointer"
                     title="Öğrenci Detaylarını Göster"
                   >
-                    <td className="py-3 px-3 font-bold text-slate-800 flex items-center gap-1.5 hover:text-amber-500 transition-colors whitespace-nowrap text-xs">
+                    <td className="py-2.5 px-2 font-bold text-slate-800 flex items-center gap-1.5 hover:text-amber-500 transition-colors whitespace-nowrap text-xs">
                       <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-650 font-bold shrink-0">
                         {item.name?.substring(0, 2).toUpperCase() || 'ÖG'}
                       </div>
                       <span>{item.name || 'Girilmemiş'}</span>
                     </td>
-                    <td className="py-3 px-3 text-slate-600 font-medium select-all text-xs truncate max-w-[140px]" onClick={(e) => e.stopPropagation()} title={item.email}>{item.email}</td>
-                    <td className="py-3 px-3 text-slate-650 font-semibold select-all text-xs whitespace-nowrap" onClick={(e) => e.stopPropagation()}>{item.phone || '-'}</td>
-                    <td className="py-3 px-3 text-slate-550 font-medium text-xs whitespace-nowrap truncate max-w-[120px]" onClick={(e) => e.stopPropagation()} title={item.city ? `${item.district ? item.district + ', ' : ''}${item.city}` : ''}>
+                    <td className="py-2.5 px-2 text-slate-600 font-medium select-all text-xs truncate max-w-[140px]" onClick={(e) => e.stopPropagation()} title={item.email}>{item.email}</td>
+                    <td className="py-2.5 px-2 text-slate-655 font-semibold select-all text-xs whitespace-nowrap" onClick={(e) => e.stopPropagation()}>{item.phone || '-'}</td>
+                    <td className="py-2.5 px-2 text-slate-550 font-medium text-xs whitespace-nowrap truncate max-w-[120px]" onClick={(e) => e.stopPropagation()} title={item.city ? `${item.district ? item.district + ', ' : ''}${item.city}` : ''}>
                       {item.city ? `${item.district ? item.district + ', ' : ''}${item.city}` : '-'}
                     </td>
-                    <td className="py-3 px-3 text-slate-550 text-xs whitespace-nowrap">
+                    <td className="py-2.5 px-2 text-slate-550 text-xs whitespace-nowrap">
                       {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <td className="py-2.5 px-2 whitespace-nowrap">
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
                         item.role === 'ADMIN' 
                           ? 'bg-red-50 text-red-650 border-red-100' 
@@ -402,15 +402,16 @@ export default function StudentsTab({
                         {item.role === 'ADMIN' ? 'YÖNETİCİ' : 'ÖĞRENCİ'}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-slate-850 font-bold text-xs text-center">{item._count?.orders || 0}</td>
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-2.5 px-2 text-slate-850 font-bold text-xs text-center">{item._count?.orders || 0}</td>
+                    <td className="py-2.5 px-2 text-right">
                       <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleToggleUserRole(item.id, item.role)}
                           disabled={item.id === currentAdminId}
-                          className="px-2 py-1 text-[10px] font-bold rounded-lg bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition-colors disabled:opacity-30 whitespace-nowrap"
+                          title={item.role === 'ADMIN' ? 'Öğrenci Rolüne Geçir' : 'Yönetici Yap'}
+                          className="p-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition-colors disabled:opacity-30"
                         >
-                          {item.role === 'ADMIN' ? 'Öğrenci Yap' : 'Admin Yap'}
+                          <Shield className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleImpersonate(item.id, item.name)}

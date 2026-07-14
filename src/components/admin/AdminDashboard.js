@@ -1152,6 +1152,32 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSendReply = async (msgId, replyText) => {
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch(`/api/admin/messages/${msgId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reply: replyText })
+      });
+
+      if (res.ok) {
+        setSuccess('Cevabınız başarıyla kaydedildi.');
+        fetchData();
+        return true;
+      } else {
+        const data = await res.json();
+        setError(data.error || 'İşlem başarısız.');
+        return false;
+      }
+    } catch (err) {
+      setError('Bağlantı hatası.');
+      return false;
+    }
+  };
+
   const handleDeleteMessage = async (msgId) => {
     if (!(await showConfirm('Bu mesajı silmek istediğinize emin misiniz?', 'Mesajı Sil', 'danger'))) return;
     setError('');
@@ -2227,6 +2253,7 @@ export default function AdminDashboard() {
                     searchQuery={searchQuery}
                     handleUpdateMessageStatus={handleUpdateMessageStatus}
                     handleDeleteMessage={handleDeleteMessage}
+                    handleSendReply={handleSendReply}
                   />
                 )}
                 
