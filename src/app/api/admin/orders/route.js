@@ -118,6 +118,16 @@ export async function POST(request) {
       },
     });
 
+    // Delete the user's abandoned cart since they now have access to the product
+    try {
+      await prisma.abandonedCart.deleteMany({
+        where: { userId: user.id }
+      });
+      console.log(`Abandoned cart cleared for manual grant user: ${user.id}`);
+    } catch (cartErr) {
+      console.error('Failed to delete abandoned cart in manual grant:', cartErr);
+    }
+
     // 5. Add to LMS Queue if the product has an lmsCourseId
     if (product.lmsCourseId) {
       try {

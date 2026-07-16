@@ -8,17 +8,20 @@ import { User, Mail, Lock, Download, Play, FileCheck, Clock, Package, LogIn, Log
 import { turkeyCities } from '@/data/turkeyDb';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import useCartStore from '@/store/cartStore';
 
 function AccountPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const clearCart = useCartStore((state) => state.clearCart);
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       setShowPaymentSuccess(true);
+      clearCart();
     }
-  }, [searchParams]);
+  }, [searchParams, clearCart]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState('');

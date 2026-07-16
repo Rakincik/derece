@@ -19,7 +19,9 @@ export async function POST(request) {
 
     console.log(`Param POS Callback received for Order ID: ${orderId}, mdStatus: ${mdStatus}`);
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const host = request.headers.get('host') || 'dereceuzem.com';
+    const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+    const siteUrl = `${proto}://${host}`;
 
     // 1. Signature Verification (SHA-1)
     // Formula: islemGUID + md + mdStatus + orderId + Lowercase(PARAM_GUID)
@@ -66,6 +68,16 @@ export async function POST(request) {
           data: { paymentStatus: 'SUCCESS' },
           include: { product: true }
         });
+
+        // Delete the user's abandoned cart since the purchase is successful
+        try {
+          await prisma.abandonedCart.deleteMany({
+            where: { userId: existingOrder.userId }
+          });
+          console.log(`Abandoned cart cleared for user: ${existingOrder.userId}`);
+        } catch (cartErr) {
+          console.error('Failed to delete abandoned cart in callback:', cartErr);
+        }
       }
 
       // 4.1 Queue LMS registration if product has lmsCourseId
@@ -114,7 +126,9 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Param POS Callback Genel Hatası:', error);
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const host = request.headers.get('host') || 'dereceuzem.com';
+    const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+    const siteUrl = `${proto}://${host}`;
     
     if (orderId) {
       try {

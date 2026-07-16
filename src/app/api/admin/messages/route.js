@@ -29,7 +29,11 @@ export async function GET(request) {
   } catch (error) {
     console.error('Mesaj listeleme hatası:', error);
     return NextResponse.json(
-      { error: 'Mesajlar yüklenirken bir hata oluştu.' },
+      { 
+        error: 'Mesajlar yüklenirken bir hata oluştu.', 
+        details: error.message,
+        stack: error.stack
+      },
       { status: 500 }
     );
   }

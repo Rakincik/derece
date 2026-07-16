@@ -1,6 +1,7 @@
 'use client';
 
-import { ShoppingBag, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShoppingBag, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
 import AdminDropdown from '../shared/AdminDropdown';
 
 export default function OrdersTab({
@@ -15,6 +16,12 @@ export default function OrdersTab({
   setOrderSortBy,
   setSelectedUser
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, orderFilterStatus, orderFilterProduct, orderFilterType, orderFilterDateRange]);
   const processedOrders = orders.filter(order => {
     // 1. Search Query filter
     const query = searchQuery.toLowerCase().trim();
@@ -85,6 +92,54 @@ export default function OrdersTab({
     }
     return 0;
   });
+
+  // Pagination calculation
+  const totalItems = processedOrders.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  // Safeguard currentPage
+  const activePage = Math.min(currentPage, totalPages > 0 ? totalPages : 1);
+  const startIndex = (activePage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedOrders = processedOrders.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      let start = Math.max(2, activePage - 1);
+      let end = Math.min(totalPages - 1, activePage + 1);
+
+      if (activePage <= 2) {
+        end = 3;
+      }
+      if (activePage >= totalPages - 1) {
+        start = totalPages - 2;
+      }
+
+      if (start > 2) {
+        pages.push('...');
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (end < totalPages - 1) {
+        pages.push('...');
+      }
+
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   // Flawless HTML-based XLS export preserving Turkish characters and formatting
   const handleExportToExcel = () => {
@@ -183,7 +238,8 @@ export default function OrdersTab({
 
       <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
         {processedOrders.length > 0 ? (
-          <div className="overflow-x-auto">
+          <>
+            <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50 whitespace-nowrap">
@@ -251,7 +307,7 @@ export default function OrdersTab({
                 </tr>
               </thead>
               <tbody>
-                {processedOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors text-sm">
                     <td className="py-3 px-3">
                       <button
@@ -290,6 +346,79 @@ export default function OrdersTab({
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Bar */}
+          {processedOrders.length > 0 && (
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white border-t border-slate-100 px-6 py-4 text-sm font-medium text-slate-500">
+              <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-500">
+                <div className="flex items-center gap-2">
+                  <span>Sayfa Başı Gösterim:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all cursor-pointer text-slate-800 font-extrabold"
+                  >
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+                <span>
+                  {processedOrders.length} siparişten {startIndex + 1}-{Math.min(endIndex, processedOrders.length)} arası gösteriliyor
+                </span>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5 select-none">
+                  <button
+                    type="button"
+                    disabled={activePage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:hover:bg-transparent cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {getPageNumbers().map((page, index) => {
+                    if (page === '...') {
+                      return (
+                        <span key={`ellipsis-${index}`} className="px-3 py-1.5 text-slate-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return (
+                      <button
+                        key={`page-${page}`}
+                        type="button"
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                          activePage === page
+                            ? 'bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-500/10'
+                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    disabled={activePage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:hover:bg-transparent cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          </>
         ) : (
           <div className="p-12 text-center">
             <ShoppingBag className="w-12 h-12 text-slate-350 mx-auto mb-4" />

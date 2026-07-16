@@ -234,6 +234,16 @@ export async function POST(request) {
           data: { paymentStatus: 'SUCCESS' }
         });
 
+        // Delete the user's abandoned cart since the purchase is successful
+        try {
+          await prisma.abandonedCart.deleteMany({
+            where: { userId }
+          });
+          console.log(`Abandoned cart cleared for free checkout user: ${userId}`);
+        } catch (cartErr) {
+          console.error('Failed to delete abandoned cart in free checkout:', cartErr);
+        }
+
         // 2. Add to LMS Queue for each product that has lmsCourseId
         for (const product of dbProducts) {
           if (product.lmsCourseId) {
@@ -269,8 +279,11 @@ export async function POST(request) {
         const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
         
         // Success/Fail Redirect endpoints
-        const successUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/checkout/callback`;
-        const failUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/checkout/callback`;
+        const host = request.headers.get('host') || 'dereceuzem.com';
+        const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+        const siteUrl = `${proto}://${host}`;
+        const successUrl = `${siteUrl}/api/checkout/callback`;
+        const failUrl = `${siteUrl}/api/checkout/callback`;
 
         const redirectFormHtml = await init3DPayment({
           orderId: paymentId,

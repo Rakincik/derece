@@ -72,7 +72,11 @@ export async function PUT(request, { params }) {
   } catch (error) {
     console.error('Mesaj güncelleme hatası:', error);
     return NextResponse.json(
-      { error: 'Mesaj güncellenirken bir hata oluştu.' },
+      { 
+        error: 'Mesaj güncellenirken bir hata oluştu.', 
+        details: error.message,
+        stack: error.stack
+      },
       { status: 500 }
     );
   }
