@@ -279,9 +279,7 @@ export async function POST(request) {
         const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
         
         // Success/Fail Redirect endpoints
-        const host = request.headers.get('host') || 'dereceuzem.com';
-        const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-        const siteUrl = `${proto}://${host}`;
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
         const successUrl = `${siteUrl}/api/checkout/callback`;
         const failUrl = `${siteUrl}/api/checkout/callback`;
 

@@ -19,9 +19,7 @@ export async function POST(request) {
 
     console.log(`Param POS Callback received for Order ID: ${orderId}, mdStatus: ${mdStatus}`);
 
-    const host = request.headers.get('host') || 'dereceuzem.com';
-    const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const siteUrl = `${proto}://${host}`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
 
     // 1. Signature Verification (SHA-1)
     // Formula: islemGUID + md + mdStatus + orderId + Lowercase(PARAM_GUID)
@@ -126,9 +124,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Param POS Callback Genel Hatası:', error);
-    const host = request.headers.get('host') || 'dereceuzem.com';
-    const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const siteUrl = `${proto}://${host}`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
     
     if (orderId) {
       try {
