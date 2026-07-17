@@ -31,6 +31,45 @@ export default function AdminDashboard() {
   const [messages, setMessages] = useState([]);
   const [abandonedCarts, setAbandonedCarts] = useState([]);
   
+  // --- DYNAMIC ABANDONED ORDERS LOGIC ---
+  const now = new Date();
+  const activeOrders = orders.filter(o => 
+    o.paymentStatus !== 'PENDING' || (now - new Date(o.createdAt)) <= 5 * 60 * 1000
+  );
+  
+  const abandonedOrders = orders.filter(o => 
+    o.paymentStatus === 'PENDING' && (now - new Date(o.createdAt)) > 5 * 60 * 1000
+  );
+
+  const combinedAbandonedCartsMap = new Map();
+  
+  abandonedCarts.forEach(cart => {
+    combinedAbandonedCartsMap.set(cart.userId, cart);
+  });
+  
+  abandonedOrders.forEach(o => {
+    const user = users.find(u => u.id === o.userId) || { name: 'İsimsiz Öğrenci', email: '', phone: '' };
+    const product = products.find(p => p.id === o.productId);
+    combinedAbandonedCartsMap.set(o.userId, {
+      id: `order-${o.id}`,
+      userId: o.userId,
+      user: user,
+      items: [{
+        title: product?.title || 'Bilinmeyen Ürün',
+        quantity: 1,
+        price: o.amount,
+        discountedPrice: o.amount,
+        coverImage: product?.coverImage
+      }],
+      subtotal: o.amount,
+      updatedAt: o.createdAt
+    });
+  });
+  
+  const finalAbandonedCarts = Array.from(combinedAbandonedCartsMap.values())
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  // ----------------------------------------
+
   // Navigation
   const [activeSection, setActiveSection] = useState('products'); // products, orders, users, coupons, messages, grant, abandoned-carts
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -1512,7 +1551,7 @@ export default function AdminDashboard() {
       icon: MessageSquare,
       badge: messages.filter(m => m.status === 'UNREAD').length 
     },
-    { id: 'abandoned-carts', label: 'Terkedilmiş Sepetler', icon: ShoppingCart, badge: abandonedCarts.length },
+    { id: 'abandoned-carts', label: 'Terkedilmiş Sepetler', icon: ShoppingCart, badge: finalAbandonedCarts.length },
     { id: 'grant', label: 'Manuel Erişim Tanımla', icon: Key },
   ];
 
@@ -1835,7 +1874,7 @@ export default function AdminDashboard() {
                         { value: '', label: 'Ödeme Durumu: Tümü' },
                         { value: 'SUCCESS', label: 'Başarılı' },
                         { value: 'FAILED', label: 'Başarısız' },
-                        { value: 'PENDING', label: 'Bekleyen' }
+                        { value: 'PENDING', label: 'Bekleyen (Aktif)' }
                       ]}
                     />
 
@@ -2219,7 +2258,7 @@ export default function AdminDashboard() {
                 {/* Orders Log */}
                 {activeSection === 'orders' && (
                   <OrdersTab
-                    orders={orders}
+                    orders={activeOrders}
                     users={users}
                     products={products}
                     searchQuery={searchQuery}
@@ -2259,7 +2298,7 @@ export default function AdminDashboard() {
                 
                 {/* Abandoned Carts Management Section */}
                 {activeSection === 'abandoned-carts' && (
-                  <AbandonedCartsTab abandonedCarts={abandonedCarts} />
+                  <AbandonedCartsTab abandonedCarts={finalAbandonedCarts} />
                 )}
                 
                 {/* Support Messages Management Section */}

@@ -33,7 +33,18 @@ export default function OrdersTab({
     );
     
     // 2. Payment Status filter
-    const matchesStatus = !orderFilterStatus || order.paymentStatus === orderFilterStatus;
+    let matchesStatus = true;
+    if (orderFilterStatus) {
+      if (orderFilterStatus === 'ABANDONED') {
+        const isAbandoned = order.paymentStatus === 'PENDING' && (new Date() - new Date(order.createdAt)) > 5 * 60 * 1000;
+        matchesStatus = isAbandoned;
+      } else if (orderFilterStatus === 'PENDING') {
+        const isAbandoned = order.paymentStatus === 'PENDING' && (new Date() - new Date(order.createdAt)) > 5 * 60 * 1000;
+        matchesStatus = order.paymentStatus === 'PENDING' && !isAbandoned;
+      } else {
+        matchesStatus = order.paymentStatus === orderFilterStatus;
+      }
+    }
     
     // 3. Product filter
     const matchesProduct = !orderFilterProduct || order.productId === orderFilterProduct;
@@ -54,14 +65,14 @@ export default function OrdersTab({
       
       if (orderFilterStartDate) {
         const [year, month, day] = orderFilterStartDate.split('-');
-        const startOnly = new Date(year, month - 1, day);
-        if (orderDateOnly < startOnly) matchesDate = false;
+        const startOnly = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+        if (orderDateOnly.getTime() < startOnly.getTime()) matchesDate = false;
       }
       
       if (orderFilterEndDate) {
         const [year, month, day] = orderFilterEndDate.split('-');
-        const endOnly = new Date(year, month - 1, day);
-        if (orderDateOnly > endOnly) matchesDate = false;
+        const endOnly = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+        if (orderDateOnly.getTime() > endOnly.getTime()) matchesDate = false;
       }
     }
 
@@ -156,7 +167,7 @@ export default function OrdersTab({
       const productTitle = order.product?.title || '-';
       const productType = order.product?.type || '-';
       const dateText = new Date(order.createdAt).toLocaleString('tr-TR');
-      const statusText = order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : (order.paymentStatus === 'PENDING' ? 'BEKLİYOR' : 'BAŞARISIZ');
+      const statusText = order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : (order.paymentStatus === 'FAILED' ? 'BAŞARISIZ' : (order.paymentStatus === 'PENDING' && (new Date() - new Date(order.createdAt)) > 5 * 60 * 1000 ? 'TERK EDİLDİ' : 'BEKLİYOR'));
       const amountText = `${order.amount.toLocaleString('tr-TR')} ₺`;
       
       return `<tr>
@@ -353,15 +364,28 @@ export default function OrdersTab({
                       {new Date(order.createdAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="py-3 px-3 whitespace-nowrap">
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                        order.paymentStatus === 'SUCCESS' 
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                          : order.paymentStatus === 'PENDING'
-                          ? 'bg-amber-50 text-amber-600 border-amber-100'
-                          : 'bg-red-50 text-red-600 border-red-100'
-                      }`}>
-                        {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : (order.paymentStatus === 'PENDING' ? 'BEKLİYOR' : 'BAŞARISIZ')}
-                      </span>
+                      {(() => {
+                        const isAbandoned = order.paymentStatus === 'PENDING' && (new Date() - new Date(order.createdAt)) > 5 * 60 * 1000;
+                        let statusText = 'BEKLİYOR';
+                        let badgeClass = 'bg-amber-50 text-amber-600 border-amber-100';
+                        
+                        if (order.paymentStatus === 'SUCCESS') {
+                          statusText = 'BAŞARILI';
+                          badgeClass = 'bg-emerald-50 text-emerald-600 border-emerald-100';
+                        } else if (order.paymentStatus === 'FAILED') {
+                          statusText = 'BAŞARISIZ';
+                          badgeClass = 'bg-red-50 text-red-600 border-red-100';
+                        } else if (isAbandoned) {
+                          statusText = 'TERK EDİLDİ';
+                          badgeClass = 'bg-slate-100 text-slate-500 border-slate-200';
+                        }
+
+                        return (
+                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badgeClass}`}>
+                            {statusText}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-3 text-right font-black text-slate-900 whitespace-nowrap text-xs">{order.amount.toLocaleString('tr-TR')} ₺</td>
                   </tr>
