@@ -28,6 +28,7 @@ export async function GET(request) {
             id: true,
             email: true,
             name: true,
+            phone: true,
           },
         },
         product: {
