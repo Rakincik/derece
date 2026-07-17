@@ -1,135 +1,127 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { generateCallbackHash, completePayment } from '@/lib/paramPos';
+import { verifyOsb, parseOsbPayload } from '@nopeion/shopier';
 
 export const dynamic = 'force-dynamic';
 
+// Handle server-to-server POST Webhook (Shopier OSB)
 export async function POST(request) {
   let orderId = '';
   
   try {
     const formData = await request.formData();
-    
-    // Param POS POST parameters returned from bank redirect
-    const islemGUID = formData.get('islemGUID') || '';
-    const md = formData.get('md') || '';
-    const mdStatus = formData.get('mdStatus') || '';
-    orderId = formData.get('orderId') || ''; // Our paymentId
-    const islemHash = formData.get('islemHash') || '';
+    const res = formData.get('res') || '';
+    const hash = formData.get('hash') || '';
 
-    console.log(`Param POS Callback received for Order ID: ${orderId}, mdStatus: ${mdStatus}`);
-
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
-
-    // 1. Signature Verification (SHA-1)
-    // Formula: islemGUID + md + mdStatus + orderId + Lowercase(PARAM_GUID)
-    const guid = (process.env.PARAM_GUID || '').toLowerCase();
-    const expectedHashString = `${islemGUID}${md}${mdStatus}${orderId}${guid}`;
-    const calculatedHash = generateCallbackHash(expectedHashString);
-
-    if (calculatedHash !== islemHash) {
-      console.error(`Param Callback: İmza doğrulama hatası! Beklenen: ${calculatedHash}, Gelen: ${islemHash}`);
-      return NextResponse.redirect(`${siteUrl}/urunler?error=invalid_signature`, 303);
+    if (!res || !hash) {
+      console.warn('Shopier Webhook callback received empty payload.');
+      return new Response('Invalid Payload', { status: 400 });
     }
 
-    // 2. Check 3D validation status (1, 2, 3, 4 are successful validation values)
-    const is3dSuccess = ['1', '2', '3', '4'].includes(mdStatus);
-
-    if (!is3dSuccess) {
-      console.warn(`Param Callback: 3D Doğrulama Başarısız. mdStatus: ${mdStatus}`);
-      await prisma.order.updateMany({
-        where: { paymentId: orderId },
-        data: { paymentStatus: 'FAILED' }
-      });
-      return NextResponse.redirect(`${siteUrl}/urunler?error=3d_failed`, 303);
-    }
-
-    // 3. Step 2: Complete Payment / Capture (TP_WMD_Pay)
-    const captureResult = await completePayment({
-      orderId,
-      islemGuid: islemGUID,
-      ucdMd: md
+    // 1. Signature Verification
+    const verification = verifyOsb({
+      username: process.env.SHOPIER_OSB_USERNAME || '',
+      password: process.env.SHOPIER_OSB_PASSWORD || '',
+      res,
+      hash
     });
 
-    if (captureResult.success) {
-      console.log(`Param POS Capture Successful for Order ID: ${orderId}`);
+    if (!verification.verified) {
+      console.error(`Shopier Webhook: Signature verification failed! Error: ${verification.error}`);
+      return new Response('Invalid Signature', { status: 400 });
+    }
 
-      // 4. Update order status to SUCCESS and fetch product details
-      const existingOrder = await prisma.order.findFirst({
-        where: { paymentId: orderId }
+    // 2. Parse payload
+    const payload = parseOsbPayload(res);
+    orderId = payload.orderId || ''; // Our transaction/paymentId
+    
+    console.log(`Shopier OSB Callback received for Order ID (paymentId): ${orderId}`);
+
+    if (!orderId) {
+      return new Response('Missing Order ID', { status: 400 });
+    }
+
+    // 3. Process payment status update in database
+    // Fetch all pending orders for this transaction
+    const orders = await prisma.order.findMany({
+      where: { paymentId: orderId },
+      include: { product: true }
+    });
+
+    if (orders.length === 0) {
+      console.warn(`Shopier Callback: No pending orders found for paymentId: ${orderId}`);
+      return new Response('Order Not Found', { status: 200 }); // Return 200 so Shopier stops retrying
+    }
+
+    // 4. Update order statuses to SUCCESS
+    await prisma.order.updateMany({
+      where: { paymentId: orderId },
+      data: { paymentStatus: 'SUCCESS' }
+    });
+
+    console.log(`Shopier Callback: Marked ${orders.length} orders as SUCCESS for transaction: ${orderId}`);
+
+    // Clear user's abandoned cart
+    const userId = orders[0].userId;
+    try {
+      await prisma.abandonedCart.deleteMany({
+        where: { userId }
       });
+      console.log(`Abandoned cart cleared for user: ${userId}`);
+    } catch (cartErr) {
+      console.error('Failed to delete abandoned cart in callback:', cartErr);
+    }
 
-      let updatedOrder = null;
-      if (existingOrder) {
-        updatedOrder = await prisma.order.update({
-          where: { id: existingOrder.id },
-          data: { paymentStatus: 'SUCCESS' },
-          include: { product: true }
-        });
-
-        // Delete the user's abandoned cart since the purchase is successful
+    // 5. Queue LMS registration for each product that has an lmsCourseId
+    for (const order of orders) {
+      if (order.product?.lmsCourseId) {
         try {
-          await prisma.abandonedCart.deleteMany({
-            where: { userId: existingOrder.userId }
+          // Check if already queued to prevent duplicate runs
+          const existingJob = await prisma.lmsQueue.findUnique({
+            where: { orderId: order.id }
           });
-          console.log(`Abandoned cart cleared for user: ${existingOrder.userId}`);
-        } catch (cartErr) {
-          console.error('Failed to delete abandoned cart in callback:', cartErr);
-        }
-      }
-
-      // 4.1 Queue LMS registration if product has lmsCourseId
-      if (updatedOrder && updatedOrder.product?.lmsCourseId) {
-        try {
-          await prisma.lmsQueue.create({
-            data: {
-              orderId: updatedOrder.id,
-              status: 'PENDING'
-            }
-          });
-          console.log(`LMS Queue added for Order: ${updatedOrder.id}, Course: ${updatedOrder.product.lmsCourseId}`);
+          
+          if (!existingJob) {
+            await prisma.lmsQueue.create({
+              data: {
+                orderId: order.id,
+                status: 'PENDING'
+              }
+            });
+            console.log(`LMS Queue added for Order: ${order.id}, Course: ${order.product.lmsCourseId}`);
+          }
         } catch (qErr) {
           console.error('LMS Queue create error:', qErr);
         }
       }
-
-      // 5. Parse coupon code from paymentId and increment its use count
-      // Format is tr_[random]_[couponCode]
-      const parts = orderId.split('_');
-      if (parts.length > 2) {
-        const couponCode = parts[2];
-        try {
-          await prisma.coupon.update({
-            where: { code: couponCode },
-            data: { uses: { increment: 1 } }
-          });
-          console.log(`Param Callback: Kupon kullanım sayısı arttırıldı: ${couponCode}`);
-        } catch (couponErr) {
-          console.error(`Param Callback: Kupon (${couponCode}) güncelleme hatası:`, couponErr);
-        }
-      }
-
-      return NextResponse.redirect(`${siteUrl}/hesabim?success=true`, 303);
-    } else {
-      console.error(`Param POS Capture Failed for Order ID: ${orderId}, Reason: ${captureResult.aciklama}`);
-      
-      // Update order status to FAILED
-      await prisma.order.updateMany({
-        where: { paymentId: orderId },
-        data: { paymentStatus: 'FAILED' }
-      });
-
-      return NextResponse.redirect(`${siteUrl}/urunler?error=payment_failed&reason=${encodeURIComponent(captureResult.aciklama)}`, 303);
     }
 
+    // 6. Parse coupon code from paymentId and increment its use count
+    // Format is tr_[random]_[couponCode]
+    const parts = orderId.split('_');
+    if (parts.length > 2) {
+      const couponCode = parts[2];
+      try {
+        await prisma.coupon.update({
+          where: { code: couponCode },
+          data: { uses: { increment: 1 } }
+        });
+        console.log(`Shopier Callback: Coupon usage incremented: ${couponCode}`);
+      } catch (couponErr) {
+        console.error(`Shopier Callback: Coupon (${couponCode}) update error:`, couponErr);
+      }
+    }
+
+    return new Response('OK', { status: 200 });
+
   } catch (error) {
-    console.error('Param POS Callback Genel Hatası:', error);
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
+    console.error('Shopier Callback General Error:', error);
     
+    // Fallback: mark orders as FAILED if we have orderId and error happens
     if (orderId) {
       try {
         await prisma.order.updateMany({
-          where: { paymentId: orderId },
+          where: { paymentId: orderId, paymentStatus: 'PENDING' },
           data: { paymentStatus: 'FAILED' }
         });
       } catch (dbErr) {
@@ -137,6 +129,12 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.redirect(`${siteUrl}/urunler?error=system_error`, 303);
+    return new Response('Internal Server Error', { status: 500 });
   }
+}
+
+// Defensive GET handler if the user's browser is redirected here
+export async function GET(request) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
+  return NextResponse.redirect(`${siteUrl}/hesabim?success=true`, 303);
 }

@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
-import { init3DPayment, queryBIN, queryInstallmentRates, getNormalizedBrandName } from '@/lib/paramPos';
+import { ShopierApiClient, ShopierPaymentFlow } from '@nopeion/shopier';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
+  // Initialize Shopier Client & Payment Flow dynamically inside the request handler to prevent build-time crashes when env keys are blank
+  const shopierClient = new ShopierApiClient({
+    pat: process.env.SHOPIER_PAT || ''
+  });
+  const shopierPayments = new ShopierPaymentFlow({
+    client: shopierClient
+  });
   try {
     // 1. Authenticate user from cookie
     const token = request.cookies.get('auth_token')?.value;
@@ -28,7 +35,7 @@ export async function POST(request) {
 
     // 2. Parse request body
     const body = await request.json();
-    const { items, couponCode, cardName, cardNumber, expiryMonth, expiryYear, cvv, installmentCount } = body;
+    const { items, couponCode } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -124,67 +131,10 @@ export async function POST(request) {
       }
     }
 
-    const baseTotal = Math.max(0, subtotal - discount);
-
-    // 5b. Installment and commission rate calculations
-    const finalInstallmentCount = installmentCount ? parseInt(installmentCount, 10) : 1;
-    let commissionRate = 0;
-
-    if (baseTotal > 0 && finalInstallmentCount > 1) {
-      const cleanCardNumber = (cardNumber || '').replace(/\s+/g, '');
-      if (cleanCardNumber.length < 6) {
-        return NextResponse.json(
-          { error: 'Geçersiz kart numarası.' },
-          { status: 400 }
-        );
-      }
-      const bin = cleanCardNumber.substring(0, 6);
-      
-      const { brand, isCredit } = await queryBIN(bin);
-      if (!isCredit) {
-        return NextResponse.json(
-          { error: 'Banka kartlarına taksit yapılamaz. Lütfen tek çekim deneyin.' },
-          { status: 400 }
-        );
-      }
-
-      const rates = await queryInstallmentRates();
-      const normalizedBrand = getNormalizedBrandName(brand);
-      
-      let bankRates = rates.find(r => r.bankName.toLowerCase().trim() === normalizedBrand.toLowerCase().trim());
-      if (!bankRates) {
-        bankRates = rates.find(r => r.bankName.includes('Diğer Banka Kartları'));
-      }
-
-      if (bankRates && bankRates.installments && bankRates.installments[finalInstallmentCount] !== undefined) {
-        commissionRate = bankRates.installments[finalInstallmentCount];
-        if (commissionRate < 0) {
-          return NextResponse.json(
-            { error: `Seçtiğiniz kart için ${finalInstallmentCount} taksit seçeneği aktif değildir.` },
-            { status: 400 }
-          );
-        }
-      } else {
-        return NextResponse.json(
-          { error: `Seçtiğiniz kart için taksit seçeneği bulunamadı.` },
-          { status: 400 }
-        );
-      }
-    }
-
-    const total = Math.max(0, baseTotal + (baseTotal * commissionRate) / 100);
+    const total = Math.max(0, subtotal - discount);
     const isFreeCheckout = total === 0;
 
-    if (!isFreeCheckout) {
-      if (!cardName || !cardNumber || !expiryMonth || !expiryYear || !cvv) {
-        return NextResponse.json(
-          { error: 'Lütfen kredi kartı bilgilerini eksiksiz doldurun.' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 6. Generate a transaction payment ID (Must be unique and fit inside Param's Siparis_ID length <= 50)
+    // 6. Generate a transaction payment ID (Must be unique and fit inside Shopier's Order ID limit)
     const randomPart = Math.random().toString(36).substring(2, 10);
     const timePart = Date.now().toString(36);
     const paymentId = coupon 
@@ -205,11 +155,6 @@ export async function POST(request) {
           amount = Math.max(0, itemPrice - itemDiscount);
         }
 
-        // Apply installment commission if applicable
-        if (commissionRate > 0) {
-          amount = amount + (amount * commissionRate) / 100;
-        }
-
         const order = await tx.order.create({
           data: {
             userId,
@@ -224,7 +169,7 @@ export async function POST(request) {
       }
     });
 
-    // 8. Initiate 3D Secure payment with Param POS (or bypass if 0 TL)
+    // 8. Initiate payment (or bypass if 0 TL)
     try {
       if (isFreeCheckout) {
         // --- 0 TL BYPASS LOGIC ---
@@ -252,7 +197,6 @@ export async function POST(request) {
               await prisma.lmsQueue.create({
                 data: {
                   orderId: order.id,
-                  lmsCourseId: product.lmsCourseId,
                   status: 'PENDING'
                 }
               });
@@ -275,39 +219,52 @@ export async function POST(request) {
         }, { status: 200 });
 
       } else {
-        // --- NORMAL PARAM POS 3D SECURE FLOW ---
-        const clientIp = request.headers.get('x-forwarded-for') || '127.0.0.1';
+        // --- NORMAL SHOPIER HOSTED CHECKOUT FLOW ---
+        // Retrieve full user record to populate buyer information
+        const user = await prisma.user.findUnique({
+          where: { id: userId }
+        });
         
-        // Success/Fail Redirect endpoints
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
-        const successUrl = `${siteUrl}/api/checkout/callback`;
-        const failUrl = `${siteUrl}/api/checkout/callback`;
+        if (!user) {
+          return NextResponse.json(
+            { error: 'Kullanıcı bulunamadı.' },
+            { status: 404 }
+          );
+        }
 
-        const redirectFormHtml = await init3DPayment({
+        const nameParts = (user.name || 'Değerli Öğrenci').trim().split(/\s+/);
+        const firstName = nameParts.slice(0, -1).join(' ') || nameParts[0] || 'Değerli';
+        const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'Öğrenci';
+        const email = user.email || 'ogrenci@dereceuzem.com';
+        const phone = user.phone || '05555555555';
+
+        // Since it's a digital package/training pack, address fields can be filled with dummy info
+        const billingAddress = user.city ? `${user.district || ''} ${user.city}` : 'Online Eğitim';
+        const billingCity = user.city || 'Istanbul';
+        const billingCountry = 'Turkiye';
+        const billingPostcode = '34000';
+
+        const paymentResult = await shopierPayments.createPaymentLink({
+          title: dbProducts.map(p => p.title).join(', ').substring(0, 100),
+          amount: parseFloat(total.toFixed(2)),
+          currency: 'TRY',
+          imageUrl: dbProducts[0]?.coverImage || 'https://dereceuzem.com/logo.png',
           orderId: paymentId,
-          amount: total,
-          cardHolderName: cardName,
-          cardNumber: cardNumber.replace(/\s+/g, ''),
-          expireMonth: expiryMonth.toString().padStart(2, '0'),
-          expireYear: expiryYear.toString().length === 2 ? '20' + expiryYear : expiryYear.toString(),
-          cvv: cvv.toString(),
-          successUrl,
-          failUrl,
-          clientIp,
-          installmentCount: finalInstallmentCount,
-          // Send coupon details in Data1 metadata field so we can increment coupon count in the callback route
-          data1: coupon ? coupon.code : ''
+          hostedCheckout: true,
+          shopSlug: process.env.SHOPIER_SHOP_SLUG || 'dereceuzem',
+          customNote: `User: ${userId}`,
         });
 
+        // The SDK returns checkoutHtml which is an auto-submitting POST form to Shopier
         return NextResponse.json({
-          message: '3D Secure başlatıldı.',
-          '3dForm': redirectFormHtml,
+          message: 'Shopier ödemesi başlatıldı.',
+          '3dForm': paymentResult.checkoutHtml,
           paymentId
         }, { status: 201 });
       }
 
-    } catch (paramErr) {
-      console.error('Param POS 3D Init Hatası:', paramErr);
+    } catch (shopierErr) {
+      console.error('Shopier Ödeme Başlatma Hatası:', shopierErr);
       
       // Mark orders as FAILED in database
       await prisma.order.updateMany({
@@ -316,7 +273,7 @@ export async function POST(request) {
       });
 
       return NextResponse.json(
-        { error: paramErr.message || 'Sanal POS ödemesi başlatılamadı.' },
+        { error: shopierErr.message || 'Ödeme sistemi başlatılamadı.' },
         { status: 502 }
       );
     }
