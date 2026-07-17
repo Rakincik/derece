@@ -1,5 +1,6 @@
 import { ShopierWebhookRouter, handleWebhookRequest } from '@nopeion/shopier';
 import prisma from '@/lib/db';
+import { spawn } from 'child_process';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,6 +120,18 @@ export async function POST(request) {
           console.error(`Webhook: Coupon (${couponCode}) update error:`, couponErr);
         }
       }
+    }
+    
+    // İşlemler tamamlandıktan sonra arka planda LMS Robotunu tetikle
+    try {
+      console.log('Webhook: Triggering LMS Queue Worker in background...');
+      const child = spawn('node', ['src/workers/lms-queue-worker.js'], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref(); // Ana sürecin bu child process'i beklemesini engelle
+    } catch (spawnErr) {
+      console.error('Webhook: LMS Worker spawn error:', spawnErr);
     }
   });
 

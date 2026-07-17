@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { spawn } from 'child_process';
 
 export const dynamic = 'force-dynamic';
 
@@ -138,9 +139,17 @@ export async function POST(request) {
             status: 'PENDING'
           }
         });
-        console.log(`Manual Grant: LMS Queue added for Order: ${order.id}, Course: ${product.lmsCourseId}`);
-      } catch (qErr) {
-        console.error('Manual Grant: LMS Queue create error:', qErr);
+        
+        // İşlemler tamamlandıktan sonra arka planda LMS Robotunu tetikle
+        console.log('Manual Grant: Triggering LMS Queue Worker in background...');
+        const child = spawn('node', ['src/workers/lms-queue-worker.js'], {
+          detached: true,
+          stdio: 'ignore'
+        });
+        child.unref();
+
+      } catch (lmsErr) {
+        console.error('LMS Queue create error on manual grant:', lmsErr);
       }
     }
 

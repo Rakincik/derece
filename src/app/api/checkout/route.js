@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { spawn } from 'child_process';
 import { ShopierApiClient, ShopierPaymentFlow } from '@nopeion/shopier';
 
 export const dynamic = 'force-dynamic';
@@ -207,6 +208,7 @@ export async function POST(request) {
         }
 
         // 2. Add to LMS Queue for each product that has lmsCourseId
+        let lmsQueueAdded = false;
         for (const product of dbProducts) {
           if (product.lmsCourseId) {
             const order = createdOrders.find(o => o.productId === product.id);
@@ -217,7 +219,21 @@ export async function POST(request) {
                   status: 'PENDING'
                 }
               });
+              lmsQueueAdded = true;
             }
+          }
+        }
+
+        if (lmsQueueAdded) {
+          try {
+            console.log('Free Checkout: Triggering LMS Queue Worker in background...');
+            const child = spawn('node', ['src/workers/lms-queue-worker.js'], {
+              detached: true,
+              stdio: 'ignore'
+            });
+            child.unref();
+          } catch (spawnErr) {
+            console.error('Free Checkout: LMS Worker spawn error:', spawnErr);
           }
         }
 
