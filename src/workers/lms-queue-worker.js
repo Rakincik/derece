@@ -209,30 +209,31 @@ async function runWorker() {
           await new Promise(r => setTimeout(r, 3000));
         }
         
-        // Arama Kutusuna Telefon Numarasını Yaz (DataTables)
+        // Arama Kutusuna E-posta Adresini Yaz (DataTables) - Telefon numarası bazen boş geldiği için E-posta daha güvenli
         await page.waitForSelector('input[type="search"]', { timeout: 15000 });
         
-        await page.evaluate((phoneStr) => {
-          // Sayfadaki görünür tüm arama kutularına yaz
+        await page.evaluate((searchStr) => {
           const inputs = document.querySelectorAll('input[type="search"]');
           inputs.forEach(input => {
-            input.value = phoneStr;
-            // React/Vue vb. Frameworkler için event tetikle
+            input.value = searchStr;
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
-            // DataTables için klavye olayı da gerekebilir
             input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
           });
-        }, lmsPhone);
+        }, lmsEmail);
         
         // Tablonun filtrelenmesi için bekle
         await new Promise(r => setTimeout(r, 2000));
         
-        // "Gruplar" butonuna tıkla (DataTables'da kalan tek satır olmalı)
+        // "Gruplar" butonuna tıkla
         await page.waitForSelector('button[onclick^="btn_group_modal"]', { timeout: 15000 });
         await page.evaluate(() => {
           const btn = document.querySelector('button[onclick^="btn_group_modal"]');
-          if (btn) btn.click();
+          if (btn) {
+            btn.click();
+          } else {
+            throw new Error("Grup atama butonu bulunamadı! Kullanıcı oluşturulamamış olabilir (Zorunlu alan eksikliği vb.) veya tabloda yok.");
+          }
         });
         
         await page.waitForSelector('#modal-classroom', { visible: true, timeout: 10000 });
