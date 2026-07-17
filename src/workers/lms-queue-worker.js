@@ -173,33 +173,33 @@ async function runWorker() {
           console.log(`Sayfa navigasyon denemesi ${attempt + 1}, URL: ${currentUrl}`);
         }
         
-        // Arama Kutusuna E-posta Adresini Yaz (DataTables)
-        const searchExists = await page.$('input[type="search"]') !== null;
+        // Arama Kutusuna E-posta Adresini Yaz (DataTables) - Sadece ana tablo (#dtbl) wrapper'ını hedefle
+        const searchSelector = '#dtbl_wrapper input[type="search"]';
+        const searchExists = await page.$(searchSelector) !== null;
         if (!searchExists) {
-          throw new Error(`Kullanıcılar tablosu bulunamadı! Sayfa URL: ${page.url()}`);
+          throw new Error(`Kullanıcılar tablosu (#dtbl) bulunamadı! Sayfa URL: ${page.url()}`);
         }
         
-        // Önce inputu temizle
-        await page.evaluate(() => {
-          const inputs = document.querySelectorAll('input[type="search"]');
-          inputs.forEach(input => {
+        // Önce ana tablonun search inputunu temizle
+        await page.evaluate((selector) => {
+          const input = document.querySelector(selector);
+          if (input) {
             input.value = '';
             input.dispatchEvent(new Event('input', { bubbles: true }));
-          });
-        });
+          }
+        }, searchSelector);
         
-        // Puppeteer ile gerçek typing
-        await page.type('input[type="search"]', lmsEmail, { delay: 50 });
+        // Puppeteer ile gerçek typing (Ana tablonun search inputuna yaz)
+        await page.type(searchSelector, lmsEmail, { delay: 50 });
         
         // Tablonun filtrelenmesi için bekle
         await new Promise(r => setTimeout(r, 3000));
         
-        // "Gruplar" butonuna tıkla (SADECE E-POSTASI EŞLEŞEN SATIRDAKİ BUTONA TIKLA)
+        // "Gruplar" butonuna tıkla (Sadece ana tablodaki (#dtbl) satırlara bak)
         await page.evaluate((email) => {
-          const rows = document.querySelectorAll('table tbody tr');
+          const rows = document.querySelectorAll('#dtbl tbody tr');
           let targetBtn = null;
           for (const row of rows) {
-            // Satırın içindeki metinde email var mı? (Büyük/küçük harf duyarsız)
             if (row.innerText.toLowerCase().includes(email.toLowerCase())) {
               targetBtn = row.querySelector('button[onclick^="btn_group_modal"]');
               break;
