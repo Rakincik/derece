@@ -244,11 +244,17 @@ export async function POST(request) {
         const billingCountry = 'Turkiye';
         const billingPostcode = '34000';
 
+        const rawImage = dbProducts[0]?.coverImage;
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
+        const validImageUrl = rawImage 
+          ? (rawImage.startsWith('http') ? rawImage : `${siteUrl}${rawImage.startsWith('/') ? '' : '/'}${rawImage}`)
+          : `${siteUrl}/logo.png`;
+
         const paymentResult = await shopierPayments.createPaymentLink({
           title: dbProducts.map(p => p.title).join(', ').substring(0, 100),
           amount: parseFloat(total.toFixed(2)),
           currency: 'TRY',
-          imageUrl: dbProducts[0]?.coverImage || 'https://dereceuzem.com/logo.png',
+          imageUrl: validImageUrl,
           orderId: paymentId,
           hostedCheckout: true,
           shopSlug: process.env.SHOPIER_SHOP_SLUG || 'dereceuzem',
