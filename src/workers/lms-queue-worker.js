@@ -209,32 +209,42 @@ async function runWorker() {
           await new Promise(r => setTimeout(r, 3000));
         }
         
-        // Arama Kutusuna E-posta Adresini Yaz (DataTables) - Telefon numarası bazen boş geldiği için E-posta daha güvenli
+        // Arama Kutusuna E-posta Adresini Yaz (DataTables) - page.type ile gerçek klavye vuruşları
         await page.waitForSelector('input[type="search"]', { timeout: 15000 });
         
-        await page.evaluate((searchStr) => {
+        // Önce inputu temizle
+        await page.evaluate(() => {
           const inputs = document.querySelectorAll('input[type="search"]');
           inputs.forEach(input => {
-            input.value = searchStr;
+            input.value = '';
             input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
           });
-        }, lmsEmail);
+        });
+        
+        // Puppeteer ile gerçek typing
+        await page.type('input[type="search"]', lmsEmail, { delay: 50 });
         
         // Tablonun filtrelenmesi için bekle
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 3000));
         
-        // "Gruplar" butonuna tıkla
-        await page.waitForSelector('button[onclick^="btn_group_modal"]', { timeout: 15000 });
-        await page.evaluate(() => {
-          const btn = document.querySelector('button[onclick^="btn_group_modal"]');
-          if (btn) {
-            btn.click();
-          } else {
-            throw new Error("Grup atama butonu bulunamadı! Kullanıcı oluşturulamamış olabilir (Zorunlu alan eksikliği vb.) veya tabloda yok.");
+        // "Gruplar" butonuna tıkla (SADECE E-POSTASI EŞLEŞEN SATIRDAKİ BUTONA TIKLA)
+        await page.evaluate((email) => {
+          const rows = document.querySelectorAll('table tbody tr');
+          let targetBtn = null;
+          for (const row of rows) {
+            // Satırın içindeki metinde email var mı? (Büyük/küçük harf duyarsız)
+            if (row.innerText.toLowerCase().includes(email.toLowerCase())) {
+              targetBtn = row.querySelector('button[onclick^="btn_group_modal"]');
+              break;
+            }
           }
-        });
+          
+          if (targetBtn) {
+            targetBtn.click();
+          } else {
+            throw new Error(`Grup atama butonu bulunamadı! Okinar'da '${email}' e-postası ile eşleşen bir kayıt yok. Öğrenci kaydedilememiş.`);
+          }
+        }, lmsEmail);
         
         await page.waitForSelector('#modal-classroom', { visible: true, timeout: 10000 });
         // JSTree veya listeden Grubu Seç
