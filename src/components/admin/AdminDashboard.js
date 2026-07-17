@@ -149,7 +149,8 @@ export default function AdminDashboard() {
   const [orderSortBy, setOrderSortBy] = useState('newest');
   const [orderFilterProduct, setOrderFilterProduct] = useState('');
   const [orderFilterType, setOrderFilterType] = useState('');
-  const [orderFilterDateRange, setOrderFilterDateRange] = useState('');
+  const [orderFilterStartDate, setOrderFilterStartDate] = useState('');
+  const [orderFilterEndDate, setOrderFilterEndDate] = useState('');
 
   // Products Management filter/search/sort/view state
   const [productsViewMode, setProductsViewMode] = useState('list'); // list or grid
@@ -1852,18 +1853,32 @@ export default function AdminDashboard() {
                     />
 
                     {/* Date Range Filter */}
-                    <AdminDropdown
-                      value={orderFilterDateRange}
-                      onChange={setOrderFilterDateRange}
-                      placeholder="Tarih Aralığı: Tümü"
-                      className="w-[160px]"
-                      options={[
-                        { value: '', label: 'Tarih Aralığı: Tümü' },
-                        { value: 'today', label: 'Bugün' },
-                        { value: 'week', label: 'Son 7 Gün' },
-                        { value: 'month', label: 'Bu Ay' }
-                      ]}
-                    />
+                    <div className="flex items-center gap-2 bg-white border border-slate-200/80 rounded-2xl px-3 py-1.5 h-[42px] shadow-sm overflow-hidden">
+                      <div className="flex items-center gap-1.5 text-xs w-full">
+                        <input
+                          type="date"
+                          value={orderFilterStartDate}
+                          onChange={(e) => setOrderFilterStartDate(e.target.value)}
+                          className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600 transition-colors w-[100px] shrink-0"
+                        />
+                        <span className="text-slate-300 font-bold">-</span>
+                        <input
+                          type="date"
+                          value={orderFilterEndDate}
+                          onChange={(e) => setOrderFilterEndDate(e.target.value)}
+                          className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600 transition-colors w-[100px] shrink-0"
+                        />
+                      </div>
+                      {(orderFilterStartDate || orderFilterEndDate) && (
+                        <button
+                          onClick={() => { setOrderFilterStartDate(''); setOrderFilterEndDate(''); }}
+                          className="p-1 text-slate-400 hover:text-rose-500 transition-colors ml-auto bg-slate-50 hover:bg-rose-50 rounded-lg"
+                          title="Tarih filtresini temizle"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
 
                     {/* Sort Options */}
                     <AdminDropdown
@@ -2211,7 +2226,8 @@ export default function AdminDashboard() {
                     orderFilterStatus={orderFilterStatus}
                     orderFilterProduct={orderFilterProduct}
                     orderFilterType={orderFilterType}
-                    orderFilterDateRange={orderFilterDateRange}
+                    orderFilterStartDate={orderFilterStartDate}
+                    orderFilterEndDate={orderFilterEndDate}
                     orderSortBy={orderSortBy}
                     setOrderSortBy={setOrderSortBy}
                     setSelectedUser={setSelectedUser}

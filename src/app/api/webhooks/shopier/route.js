@@ -62,6 +62,25 @@ export async function POST(request) {
       console.error('Webhook: Abandoned cart clear error:', cartErr);
     }
 
+    // Eski başarısız / bekleyen (PENDING/FAILED) sipariş çöplerini temizle
+    for (const dbOrder of orders) {
+      try {
+        const deleted = await prisma.order.deleteMany({
+          where: {
+            userId: dbOrder.userId,
+            productId: dbOrder.productId,
+            id: { not: dbOrder.id }, // Mevcut başarılı siparişi silme
+            paymentStatus: { in: ['PENDING', 'FAILED'] }
+          }
+        });
+        if (deleted.count > 0) {
+          console.log(`Webhook: Cleaned up ${deleted.count} old pending/failed orders for user ${dbOrder.userId}, product ${dbOrder.productId}`);
+        }
+      } catch (cleanupErr) {
+        console.error('Webhook: Cleanup old orders error:', cleanupErr);
+      }
+    }
+
     // LMS sırasına ekle
     for (const dbOrder of orders) {
       if (dbOrder.product?.lmsCourseId) {

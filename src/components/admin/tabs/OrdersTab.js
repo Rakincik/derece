@@ -11,7 +11,8 @@ export default function OrdersTab({
   orderFilterStatus,
   orderFilterProduct,
   orderFilterType,
-  orderFilterDateRange,
+  orderFilterStartDate,
+  orderFilterEndDate,
   orderSortBy,
   setOrderSortBy,
   setSelectedUser
@@ -21,7 +22,7 @@ export default function OrdersTab({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, orderFilterStatus, orderFilterProduct, orderFilterType, orderFilterDateRange]);
+  }, [searchQuery, orderFilterStatus, orderFilterProduct, orderFilterType, orderFilterStartDate, orderFilterEndDate]);
   const processedOrders = orders.filter(order => {
     // 1. Search Query filter
     const query = searchQuery.toLowerCase().trim();
@@ -47,17 +48,20 @@ export default function OrdersTab({
 
     // 5. Date Range filter
     let matchesDate = true;
-    if (orderFilterDateRange) {
+    if (orderFilterStartDate || orderFilterEndDate) {
       const orderDate = new Date(order.createdAt);
-      const now = new Date();
-      if (orderFilterDateRange === 'today') {
-        matchesDate = orderDate.toDateString() === now.toDateString();
-      } else if (orderFilterDateRange === 'week') {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(now.getDate() - 7);
-        matchesDate = orderDate >= sevenDaysAgo;
-      } else if (orderFilterDateRange === 'month') {
-        matchesDate = orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+      const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+      
+      if (orderFilterStartDate) {
+        const [year, month, day] = orderFilterStartDate.split('-');
+        const startOnly = new Date(year, month - 1, day);
+        if (orderDateOnly < startOnly) matchesDate = false;
+      }
+      
+      if (orderFilterEndDate) {
+        const [year, month, day] = orderFilterEndDate.split('-');
+        const endOnly = new Date(year, month - 1, day);
+        if (orderDateOnly > endOnly) matchesDate = false;
       }
     }
 
@@ -152,7 +156,7 @@ export default function OrdersTab({
       const productTitle = order.product?.title || '-';
       const productType = order.product?.type || '-';
       const dateText = new Date(order.createdAt).toLocaleString('tr-TR');
-      const statusText = order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : 'BAŞARISIZ';
+      const statusText = order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : (order.paymentStatus === 'PENDING' ? 'BEKLİYOR' : 'BAŞARISIZ');
       const amountText = `${order.amount.toLocaleString('tr-TR')} ₺`;
       
       return `<tr>
@@ -320,7 +324,24 @@ export default function OrdersTab({
                       >
                         {order.user?.name || 'İsimsiz Kullanıcı'}
                       </button>
-                      <div className="text-[10px] text-slate-400 font-medium">{order.user?.email}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="text-[10px] text-slate-400 font-medium">{order.user?.email}</div>
+                        {order.user?.phone && (
+                          <a 
+                            href={`https://wa.me/90${order.user.phone.replace(/[^0-9]/g, '').slice(-10)}?text=${encodeURIComponent(
+                              order.paymentStatus === 'SUCCESS' 
+                                ? `Merhaba ${order.user.name?.split(' ')[0] || 'Öğrencimiz'}, DereceUZEM'den yazıyorum. "${order.product?.title || 'Eğitim'}" kaydın başarıyla onaylandı, aramıza hoş geldin! 🚀`
+                                : `Merhaba ${order.user.name?.split(' ')[0] || 'Öğrencimiz'}, DereceUZEM'den yazıyorum. "${order.product?.title || 'Eğitim'}" için işlemin yarım kalmış görünüyor, yardımcı olabileceğim bir konu var mı?`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center p-0.5 rounded transition-transform hover:scale-110 text-[#25D366] bg-green-50"
+                            title="WhatsApp'tan Mesaj Gönder"
+                          >
+                            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                          </a>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-3">
                       <div className="font-semibold text-slate-700 text-xs line-clamp-1">{order.product?.title}</div>
@@ -335,9 +356,11 @@ export default function OrdersTab({
                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                         order.paymentStatus === 'SUCCESS' 
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                          : 'bg-red-50 text-red-650 border-red-100'
+                          : order.paymentStatus === 'PENDING'
+                          ? 'bg-amber-50 text-amber-600 border-amber-100'
+                          : 'bg-red-50 text-red-600 border-red-100'
                       }`}>
-                        {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : 'BAŞARISIZ'}
+                        {order.paymentStatus === 'SUCCESS' ? 'BAŞARILI' : (order.paymentStatus === 'PENDING' ? 'BEKLİYOR' : 'BAŞARISIZ')}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-right font-black text-slate-900 whitespace-nowrap text-xs">{order.amount.toLocaleString('tr-TR')} ₺</td>

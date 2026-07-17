@@ -246,9 +246,19 @@ export async function POST(request) {
 
         const rawImage = dbProducts[0]?.coverImage;
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dereceuzem.com';
-        const validImageUrl = rawImage 
-          ? (rawImage.startsWith('http') ? rawImage : `${siteUrl}${rawImage.startsWith('/') ? '' : '/'}${rawImage}`)
-          : `${siteUrl}/logo.png`;
+        let validImageUrl = `${siteUrl}/logo.png`;
+        
+        if (rawImage) {
+          if (rawImage.startsWith('http')) {
+            validImageUrl = rawImage;
+          } else {
+            const cleanPath = rawImage.startsWith('/') ? rawImage : `/${rawImage}`;
+            validImageUrl = `${siteUrl}${cleanPath}`;
+          }
+        }
+        
+        // Shopier API, URL'de boşluk veya geçersiz karakter varsa 400 Bad Request döner.
+        validImageUrl = encodeURI(validImageUrl);
 
         const paymentResult = await shopierPayments.createPaymentLink({
           title: dbProducts.map(p => p.title).join(', ').substring(0, 100),
