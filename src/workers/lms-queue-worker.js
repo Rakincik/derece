@@ -154,10 +154,13 @@ async function runWorker() {
             }
           };
           
-          setInput('#modal-register input[name="name"], #modal-register #name', firstName);
-          setInput('#modal-register input[name="surname"], #modal-register input[name="lastname"], #modal-register input[name="last_name"], #modal-register #surname, #modal-register #lastname', surname);
-          setInput('#modal-register input[name="email"], #modal-register #email, #modal-register input[type="email"]', lmsEmail);
-          setInput('#modal-register input[name="phone"], #modal-register #phone, #modal-register input[name="gsm"], #modal-register input[name="mobile"]', lmsPhone);
+          setInput('#modal-register input[name="name"], #modal-register input[name="ad"], #modal-register input[name="first_name"], #modal-register #name, #modal-register #ad', firstName);
+          
+          setInput('#modal-register input[name="surname"], #modal-register input[name="soyad"], #modal-register input[name="lastname"], #modal-register input[name="last_name"], #modal-register #surname, #modal-register #soyad', surname);
+          
+          setInput('#modal-register input[name="email"], #modal-register input[name="eposta"], #modal-register input[name="e_posta"], #modal-register #email, #modal-register #eposta, #modal-register input[type="email"]', lmsEmail);
+          
+          setInput('#modal-register input[name="phone"], #modal-register input[name="telefon"], #modal-register input[name="cep_telefonu"], #modal-register input[name="gsm"], #modal-register #phone, #modal-register #telefon', lmsPhone);
         }, { firstName, surname, lmsEmail, lmsPhone });
         
         await new Promise(r => setTimeout(r, 1000));
