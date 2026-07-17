@@ -50,7 +50,7 @@ export async function POST(request) {
 
     if (orders.length === 0) {
       console.warn(`Shopier Callback: No pending orders found for paymentId: ${orderId}`);
-      return new Response('Order Not Found', { status: 200 }); // Return 200 so Shopier stops retrying
+      return new Response('success', { status: 200 }); // Return success so Shopier stops retrying
     }
 
     // 4. Update order statuses to SUCCESS
@@ -112,7 +112,7 @@ export async function POST(request) {
       }
     }
 
-    return new Response('OK', { status: 200 });
+    return new Response('success', { status: 200 });
 
   } catch (error) {
     console.error('Shopier Callback General Error:', error);
