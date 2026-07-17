@@ -109,15 +109,9 @@ export default function CartDrawer() {
       const data = await res.json();
       
       if (res.ok) {
-        if (data['3dForm']) {
-          // Auto-submit Shopier redirect form
-          const div = document.createElement('div');
-          div.innerHTML = data['3dForm'];
-          document.body.appendChild(div);
-          const form = div.querySelector('form');
-          if (form) {
-            form.submit();
-          }
+        if (data.paymentUrl) {
+          // Redirect directly to the Shopier product URL
+          window.location.href = data.paymentUrl;
           return;
         }
         if (data.freeCheckout) {

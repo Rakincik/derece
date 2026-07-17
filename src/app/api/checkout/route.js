@@ -260,10 +260,12 @@ export async function POST(request) {
           shopSlug: process.env.SHOPIER_SHOP_SLUG || 'dereceuzem',
         });
 
-        // The SDK returns checkoutHtml which is an auto-submitting POST form to Shopier
+        // The SDK returns checkoutHtml which is an auto-submitting POST form to Shopier,
+        // but for digital/custom products Shopier's /s/shipping endpoint throws 1041 Error.
+        // So we redirect directly to the product's paymentUrl.
         return NextResponse.json({
           message: 'Shopier ödemesi başlatıldı.',
-          '3dForm': paymentResult.checkoutHtml,
+          paymentUrl: paymentResult.paymentUrl,
           paymentId
         }, { status: 201 });
       }
