@@ -14,7 +14,7 @@ async function main() {
     console.log('Shopier REST Webhook aboneliği oluşturuluyor...');
     const webhook = await client.webhooks.create({
       url: 'https://dereceuzem.com/api/webhooks/shopier',
-      events: ['order.created']
+      event: 'order.created'
     });
 
     console.log('====================================');
