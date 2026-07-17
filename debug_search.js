@@ -18,40 +18,28 @@ require('dotenv').config();
   }
   
   await page.goto(url + '/account/', { waitUntil: 'networkidle2' });
-  await new Promise(r => setTimeout(r, 3000));
+  await new Promise(r => setTimeout(r, 4000));
   
-  console.log('Search page loaded. Current URL:', page.url());
+  console.log('Page loaded. Analyzing all tables on the page...');
   
-  const testEmail = 'onurbostan5068@gmail.com';
-  const testPhone = '5368303250';
-  const testName = 'Onur';
-  
-  const testSearch = async (term, name) => {
-    console.log(`\nTesting search by ${name}: "${term}"`);
-    await page.evaluate(() => {
-      const input = document.querySelector('input[type="search"]');
-      if (input) {
-        input.value = '';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-      }
+  const tablesInfo = await page.evaluate(() => {
+    const tables = Array.from(document.querySelectorAll('table'));
+    return tables.map((t, idx) => {
+      const headers = Array.from(t.querySelectorAll('thead th')).map(th => th.innerText.trim());
+      const firstRows = Array.from(t.querySelectorAll('tbody tr')).slice(0, 3).map(tr => 
+        Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim())
+      );
+      return {
+        index: idx,
+        id: t.id,
+        className: t.className,
+        headers,
+        firstRows
+      };
     });
-    if (await page.$('input[type="search"]')) {
-      await page.type('input[type="search"]', term, { delay: 30 });
-      await new Promise(r => setTimeout(r, 3000));
-      
-      const results = await page.evaluate(() => {
-        const rows = Array.from(document.querySelectorAll('table tbody tr'));
-        return rows.map(r => r.innerText.trim().replace(/\s+/g, ' '));
-      });
-      console.log(`Results found:`, results.slice(0, 5));
-    } else {
-      console.log('Search input not found!');
-    }
-  };
+  });
   
-  await testSearch(testEmail, 'Email');
-  await testSearch(testPhone, 'Phone');
-  await testSearch(testName, 'Name');
+  console.log('TABLES FOUND:', JSON.stringify(tablesInfo, null, 2));
   
   await browser.close();
 })();
