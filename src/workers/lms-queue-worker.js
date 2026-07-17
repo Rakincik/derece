@@ -9,8 +9,6 @@ const OKINAR_USERNAME = process.env.OKINAR_USERNAME;
 const OKINAR_PASSWORD = process.env.OKINAR_PASSWORD;
 
 async function runWorker() {
-  console.log(`[${new Date().toISOString()}] LMS Queue Worker Started...`);
-
   // PENDING olan veya daha önce hata alıp deneme sayısı 3'ten küçük olanları getir
   const pendingJobs = await prisma.lmsQueue.findMany({
     where: {
@@ -31,8 +29,6 @@ async function runWorker() {
   });
 
   if (pendingJobs.length === 0) {
-    console.log(`[${new Date().toISOString()}] İşlenecek kayıt bulunamadı. Bekleniyor...`);
-    await prisma.$disconnect();
     return;
   }
 
@@ -323,4 +319,19 @@ async function runWorker() {
   }
 }
 
-runWorker();
+async function startDaemon() {
+  console.log(`[${new Date().toISOString()}] LMS Queue Worker Daemon Started...`);
+  
+  // Sonsuz döngü (Daemon)
+  while (true) {
+    try {
+      await runWorker();
+    } catch (err) {
+      console.error('Daemon loop error:', err);
+    }
+    // Her işlem döngüsünden sonra 1 dakika (60000 ms) bekle
+    await new Promise(resolve => setTimeout(resolve, 60000));
+  }
+}
+
+startDaemon();
