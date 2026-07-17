@@ -142,7 +142,7 @@ async function runWorker() {
             console.log(`Okinar kayit yaniti (raw): ${saveResult.body.substring(0, 200)}`);
           }
         } else {
-          console.log(`Okinar kayit hatasi (HTTP ${saveResult.status}): ${saveResult.body.substring(0, 300)}`);
+          console.log(`Okinar kayit hatasi (HTTP ${saveResult.status}): ${saveResult.body.substring(0, 2000)}`);
           // 500 hatası alınabilir (örn: email zaten var) - devam et, belki zaten kayıtlıdır
         }
         
