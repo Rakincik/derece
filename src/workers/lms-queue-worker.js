@@ -149,12 +149,35 @@ async function runWorker() {
         // --- GRUBA ATAMA AŞAMASI ---
         console.log(`Öğrenci ${lmsCourseId} ID'li gruba atanıyor...`);
         
-        // Kullanıcılar sayfasına git (API ile kayıt yaptığımız için tarayıcı /dashboard'ta olabilir)
-        await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'networkidle2' });
-        await new Promise(r => setTimeout(r, 2000));
+        // Kullanıcılar sayfasına git ve doğru sayfada olduğumuzu doğrula
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'networkidle2' });
+          await new Promise(r => setTimeout(r, 2000));
+          
+          const currentUrl = page.url();
+          if (currentUrl.includes('/account')) {
+            break; // Doğru sayfadayız
+          }
+          
+          // Login sayfasına yönlendirildiyse tekrar giriş yap
+          if (currentUrl.includes('login')) {
+            console.log('Oturum süresi dolmuş, tekrar giriş yapılıyor...');
+            const u = await page.$('input[name="email"]') || await page.$('input[name="username"]') || await page.$('input[type="text"]');
+            if (u) await u.type(process.env.OKINAR_USERNAME);
+            const p = await page.$('input[name="password"]') || await page.$('input[type="password"]');
+            if (p) await p.type(process.env.OKINAR_PASSWORD);
+            const b = await page.$('#btnLogin') || await page.$('button[type="submit"]');
+            if (b) await Promise.all([page.waitForNavigation({waitUntil:'networkidle2',timeout:15000}).catch(()=>{}), b.click()]);
+            await new Promise(r => setTimeout(r, 2000));
+          }
+          console.log(`Sayfa navigasyon denemesi ${attempt + 1}, URL: ${currentUrl}`);
+        }
         
-        // Arama Kutusuna E-posta Adresini Yaz (DataTables) - page.type ile gerçek klavye vuruşları
-        await page.waitForSelector('input[type="search"]', { timeout: 15000 });
+        // Arama Kutusuna E-posta Adresini Yaz (DataTables)
+        const searchExists = await page.$('input[type="search"]') !== null;
+        if (!searchExists) {
+          throw new Error(`Kullanıcılar tablosu bulunamadı! Sayfa URL: ${page.url()}`);
+        }
         
         // Önce inputu temizle
         await page.evaluate(() => {
