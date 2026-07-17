@@ -258,7 +258,6 @@ export async function POST(request) {
           orderId: paymentId,
           hostedCheckout: true,
           shopSlug: process.env.SHOPIER_SHOP_SLUG || 'dereceuzem',
-          customNote: `User: ${userId}`,
         });
 
         // The SDK returns checkoutHtml which is an auto-submitting POST form to Shopier
