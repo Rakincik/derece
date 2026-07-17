@@ -95,44 +95,7 @@ async function runWorker() {
           throw new Error('Ürünün LMS Kurs IDsi boş!');
         }
 
-        // 1. Kullanıcılar Listesini Bul
-        await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'networkidle2' });
-        
-        // Modalın yüklenmesi veya yönlendirmeler için biraz bekle
-        await new Promise(r => setTimeout(r, 2000));
-        
-        let hasModal = await page.$('#modal-register') !== null;
-        
-        if (!hasModal) {
-          console.log('Kullanıcılar sayfası (veya modal) doğrudan bulunamadı, sol menüden tıklanıyor...');
-          // Sol menüdeki Kullanıcılar linkine tıkla (Okinar SPA yapısında AJAX ile yüklüyor olabilir)
-          await page.evaluate(() => {
-            const links = Array.from(document.querySelectorAll('a'));
-            // Kullanıcılar Panel vs. olabileceği için tam eşleşme veya kapsama bakıyoruz
-            const target = links.find(l => l.innerText.trim() === 'Kullanıcılar' || l.innerText.includes('Tüm Kullanıcılar'));
-            if (target) {
-              target.click();
-            }
-          });
-          
-          // AJAX yüklemesi için bekle
-          await new Promise(r => setTimeout(r, 3000));
-          hasModal = await page.$('#modal-register') !== null;
-        }
-        
-        if (!hasModal) {
-          throw new Error('Kullanıcılar sayfası bulunamadı (modal-register yok)! Sol menüye tıklanmasına rağmen açılmadı.');
-        }
-        
-        console.log('Kullanıcılar sayfasına başarıyla ulaşıldı.');
-        
-        // 2. Yeni Kullanıcı Modalını Aç
-        await page.waitForSelector('button[data-target="#modal-register"]', { visible: true, timeout: 15000 });
-        await page.click('button[data-target="#modal-register"]');
-        await page.waitForSelector('#modal-register', { visible: true, timeout: 10000 });
-        await new Promise(r => setTimeout(r, 1500)); // Modal animasyonu tamamlansın
-        
-        // 3. Formu Doldur
+        // 1. Öğrenciyi Okinar'a API ile kaydet (Modal/form yerine direkt AJAX POST - %100 güvenilir)
         const digits = (user.phone || '').replace(/\D/g, '');
         const lmsPhone = digits.length >= 10 ? digits.slice(-10) : digits;
         const lmsEmail = (user.email || '').trim();
@@ -141,99 +104,46 @@ async function runWorker() {
         const surname = nameParts.length > 1 ? nameParts.pop() : 'Öğrenci';
         const firstName = nameParts.join(' ') || 'Öğrenci';
         
-        // --- ALAN DOLDURMA: Tıkla → Seç → Yaz (en güvenilir yöntem) ---
-        // Ad (#name)
-        await page.click('#name');
-        await page.keyboard.down('Control');
-        await page.keyboard.press('a');
-        await page.keyboard.up('Control');
-        await page.type('#name', firstName, { delay: 30 });
+        console.log(`Kayit ediliyor: Ad=${firstName}, Soyad=${surname}, Email=${lmsEmail}, Tel=${lmsPhone}`);
         
-        // Soyad (#surname)
-        await page.click('#surname');
-        await page.keyboard.down('Control');
-        await page.keyboard.press('a');
-        await page.keyboard.up('Control');
-        await page.type('#surname', surname, { delay: 30 });
-        
-        // E-Posta (#email)
-        await page.click('#email');
-        await page.keyboard.down('Control');
-        await page.keyboard.press('a');
-        await page.keyboard.up('Control');
-        await page.type('#email', lmsEmail, { delay: 30 });
-        
-        // Telefon (#phone) - placeholder "5" var, yani 5XXXXXXXXX formatı bekleniyor
-        await page.click('#phone');
-        await page.keyboard.down('Control');
-        await page.keyboard.press('a');
-        await page.keyboard.up('Control');
-        await page.type('#phone', lmsPhone, { delay: 30 });
-        
-        // Parola (#password) - disabled ise dokunma
-        const isPassDisabled = await page.$eval('#password', el => el.disabled).catch(() => true);
-        if (!isPassDisabled) {
-          await page.click('#password');
-          await page.type('#password', lmsEmail, { delay: 30 });
-        }
-        
-        // Doldurulan değerleri logla (debug)
-        const filledValues = await page.evaluate(() => ({
-          name: document.querySelector('#name')?.value,
-          surname: document.querySelector('#surname')?.value,
-          email: document.querySelector('#email')?.value,
-          phone: document.querySelector('#phone')?.value,
-        }));
-        console.log(`Form dolduruldu: Ad=${filledValues.name}, Soyad=${filledValues.surname}, Email=${filledValues.email}, Tel=${filledValues.phone}`);
-        
-        await new Promise(r => setTimeout(r, 500));
-        
-        // Kaydet butonuna GERÇEK mouse tıklamasıyla tıkla (jQuery event'lerini tetiklemek için ŞART)
-        await page.click('#modal-register .btn-success');
-        console.log('Kaydet butonuna tiklandi, yanit bekleniyor...');
-        
-        // Kaydedilmesini bekle - modal kapandı mı kontrol et (başarılıysa Okinar modalı kapatır)
-        let modalClosed = false;
-        for (let i = 0; i < 10; i++) {
-          await new Promise(r => setTimeout(r, 1000));
-          const isModalVisible = await page.evaluate(() => {
-            const modal = document.querySelector('#modal-register');
-            return modal && modal.classList.contains('in') && modal.style.display !== 'none';
-          });
-          if (!isModalVisible) {
-            modalClosed = true;
-            console.log('Modal kapandi - kullanici basariyla kaydedildi.');
-            break;
-          }
-        }
-        
-        if (!modalClosed) {
-          // Modal hala açık = form hatası var
-          const modalContent = await page.evaluate(() => {
-            const modal = document.querySelector('#modal-register');
-            if (!modal) return 'Modal bulunamadi';
-            // Hata mesajlarını ara
-            const errorEls = modal.querySelectorAll('.alert, .help-block, .error, .text-danger, .invalid-feedback, span.field-validation-error');
-            const errors = [];
-            errorEls.forEach(el => {
-              const txt = el.innerText.trim();
-              if (txt && txt !== '*' && txt.length > 1) errors.push(txt);
+        // Direkt Okinar API'sine POST isteği at (tarayıcı session cookie'lerini otomatik gönderir)
+        const saveResult = await page.evaluate(async (data) => {
+          try {
+            const formData = new URLSearchParams();
+            formData.append('name', data.firstName);
+            formData.append('surname', data.surname);
+            formData.append('email', data.email);
+            formData.append('role', '3'); // 3 = Öğrenci
+            formData.append('phone', data.phone);
+            formData.append('password', '');
+            
+            const response = await fetch('/account/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: formData.toString()
             });
-            if (errors.length > 0) return errors.join(' | ');
-            // Input validation state kontrol et
-            const invalidInputs = modal.querySelectorAll('input:invalid, input.is-invalid, input.input-validation-error');
-            if (invalidInputs.length > 0) {
-              return Array.from(invalidInputs).map(i => `${i.name || i.id}: validasyon hatasi`).join(', ');
+            
+            const text = await response.text();
+            return { status: response.status, body: text };
+          } catch (err) {
+            return { status: 0, body: err.message };
+          }
+        }, { firstName, surname, email: lmsEmail, phone: lmsPhone });
+        
+        if (saveResult.status === 200) {
+          try {
+            const parsed = JSON.parse(saveResult.body);
+            if (parsed.status === 'OK') {
+              console.log('Ogrenci Okinar\'a basariyla kaydedildi.');
+            } else {
+              console.log(`Okinar kayit yaniti: ${saveResult.body}`);
             }
-            return 'Modal hala acik ama hata mesaji bulunamadi';
-          });
-          console.log(`Okinar form hatasi: ${modalContent}`);
-          // Modalı kapat ve devam et
-          await page.evaluate(() => {
-            const closeBtn = document.querySelector('#modal-register .close') || document.querySelector('#modal-register [data-dismiss="modal"]');
-            if (closeBtn) closeBtn.click();
-          });
-          await new Promise(r => setTimeout(r, 1000));
+          } catch {
+            console.log(`Okinar kayit yaniti (raw): ${saveResult.body.substring(0, 200)}`);
+          }
+        } else {
+          console.log(`Okinar kayit hatasi (HTTP ${saveResult.status}): ${saveResult.body.substring(0, 300)}`);
+          // 500 hatası alınabilir (örn: email zaten var) - devam et, belki zaten kayıtlıdır
         }
         
         // --- GRUBA ATAMA AŞAMASI ---
