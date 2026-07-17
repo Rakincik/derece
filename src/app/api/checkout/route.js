@@ -265,9 +265,9 @@ export async function POST(request) {
 
     } catch (shopierErr) {
       console.error('Shopier Ödeme Başlatma Hatası:', shopierErr);
-      console.error('Shopier Error Body:', shopierErr.response?.body);
+      console.error('Shopier Error Details:', shopierErr.details);
       
-      const errorDetails = shopierErr.response?.body ? JSON.stringify(shopierErr.response.body) : shopierErr.message;
+      const errorDetails = shopierErr.details ? JSON.stringify(shopierErr.details) : shopierErr.message;
 
       // Mark orders as FAILED in database
       await prisma.order.updateMany({
