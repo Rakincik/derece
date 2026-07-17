@@ -8,5 +8,19 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
     take: 5
   });
-  return NextResponse.json(orders);
+  
+  let osbLogs = null;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const debugPath = path.join(process.cwd(), 'public', 'osb_debug.json');
+    if (fs.existsSync(debugPath)) {
+      const fileContent = fs.readFileSync(debugPath, 'utf8');
+      osbLogs = fileContent.split('\n').filter(Boolean).map(line => JSON.parse(line));
+    }
+  } catch (e) {
+    osbLogs = { error: e.message };
+  }
+
+  return NextResponse.json({ orders, osbLogs });
 }
