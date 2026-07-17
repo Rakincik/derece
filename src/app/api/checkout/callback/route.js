@@ -36,6 +36,21 @@ export async function POST(request) {
     const shopierOrderId = payload.orderId || ''; // Shopier's auto-generated Order ID
     const shopierProductId = payload.productId ? payload.productId.toString() : ''; // The product ID we created
     
+    // DEBUG: Write payload to a public file so we can inspect it live!
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const debugPath = path.join(process.cwd(), 'public', 'osb_debug.json');
+      fs.appendFileSync(debugPath, JSON.stringify({
+        time: new Date().toISOString(),
+        payload: payload,
+        shopierOrderId,
+        shopierProductId
+      }) + '\n');
+    } catch (e) {
+      console.error('Debug write failed', e);
+    }
+    
     // We use the productId for tracking because we bypassed the checkoutHtml form.
     // If productId is not found in the payload, fallback to orderId for compatibility
     orderId = shopierProductId || shopierOrderId; 
