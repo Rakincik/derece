@@ -265,7 +265,10 @@ export async function POST(request) {
 
     } catch (shopierErr) {
       console.error('Shopier Ödeme Başlatma Hatası:', shopierErr);
+      console.error('Shopier Error Body:', shopierErr.response?.body);
       
+      const errorDetails = shopierErr.response?.body ? JSON.stringify(shopierErr.response.body) : shopierErr.message;
+
       // Mark orders as FAILED in database
       await prisma.order.updateMany({
         where: { paymentId },
@@ -273,7 +276,7 @@ export async function POST(request) {
       });
 
       return NextResponse.json(
-        { error: shopierErr.message || 'Ödeme sistemi başlatılamadı.' },
+        { error: `Shopier API Error: ${errorDetails} | Msg: ${shopierErr.message}` },
         { status: 502 }
       );
     }
