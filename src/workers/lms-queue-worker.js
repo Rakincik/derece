@@ -149,10 +149,9 @@ async function runWorker() {
         // --- GRUBA ATAMA AŞAMASI ---
         console.log(`Öğrenci ${lmsCourseId} ID'li gruba atanıyor...`);
         
-        // Form işlemlerinden sonra tablonun yenilenmesi ve açık kalmış olabilecek hata modallarının 
-        // (örn: 'Bu email zaten var') kapanması için sayfayı tamamen yeniliyoruz.
-        await page.reload({ waitUntil: 'networkidle2' });
-        await new Promise(r => setTimeout(r, 3000));
+        // Kullanıcılar sayfasına git (API ile kayıt yaptığımız için tarayıcı /dashboard'ta olabilir)
+        await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'networkidle2' });
+        await new Promise(r => setTimeout(r, 2000));
         
         // Arama Kutusuna E-posta Adresini Yaz (DataTables) - page.type ile gerçek klavye vuruşları
         await page.waitForSelector('input[type="search"]', { timeout: 15000 });
