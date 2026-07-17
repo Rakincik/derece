@@ -130,8 +130,9 @@ async function runWorker() {
         await page.waitForSelector('button[data-target="#modal-register"]', { visible: true, timeout: 15000 });
         await page.click('button[data-target="#modal-register"]');
         await page.waitForSelector('#modal-register', { visible: true, timeout: 10000 });
+        await new Promise(r => setTimeout(r, 1500)); // Modal animasyonu tamamlansın
         
-        // 3. Formu Doldur (Ad-soyad sonundaki/başındaki boşlukları trimle ve telefonu 10 haneli formatta temizle)
+        // 3. Formu Doldur
         const digits = (user.phone || '').replace(/\D/g, '');
         const lmsPhone = digits.length >= 10 ? digits.slice(-10) : digits;
         const lmsEmail = (user.email || '').trim();
@@ -140,48 +141,77 @@ async function runWorker() {
         const surname = nameParts.length > 1 ? nameParts.pop() : 'Öğrenci';
         const firstName = nameParts.join(' ') || 'Öğrenci';
         
-        // Formu temizle ve gerçek klavye vuruşlarıyla doldur (Input mask'ların çalışması için page.type ŞART)
-        await page.evaluate(() => {
-          const inputs = document.querySelectorAll('#modal-register input[type="text"], #modal-register input[type="email"], #modal-register input[type="password"], #modal-register input[type="tel"]');
-          inputs.forEach(i => i.value = '');
-        });
+        // --- ALAN DOLDURMA: Tıkla → Seç → Yaz (en güvenilir yöntem) ---
+        // Ad (#name)
+        await page.click('#name');
+        await page.keyboard.down('Control');
+        await page.keyboard.press('a');
+        await page.keyboard.up('Control');
+        await page.type('#name', firstName, { delay: 30 });
         
-        // Ad
-        const adSel = '#modal-register input[name="name"], #modal-register input[name="ad"], #modal-register input[name="first_name"], #modal-register #name, #modal-register #ad';
-        if (await page.$(adSel)) await page.type(adSel, firstName, { delay: 30 });
+        // Soyad (#surname)
+        await page.click('#surname');
+        await page.keyboard.down('Control');
+        await page.keyboard.press('a');
+        await page.keyboard.up('Control');
+        await page.type('#surname', surname, { delay: 30 });
         
-        // Soyad
-        const soyadSel = '#modal-register input[name="surname"], #modal-register input[name="soyad"], #modal-register input[name="lastname"], #modal-register input[name="last_name"], #modal-register #surname, #modal-register #soyad';
-        if (await page.$(soyadSel)) await page.type(soyadSel, surname, { delay: 30 });
+        // E-Posta (#email)
+        await page.click('#email');
+        await page.keyboard.down('Control');
+        await page.keyboard.press('a');
+        await page.keyboard.up('Control');
+        await page.type('#email', lmsEmail, { delay: 30 });
         
-        // E-Posta
-        const emailSel = '#modal-register input[name="email"], #modal-register input[name="eposta"], #modal-register input[name="e_posta"], #modal-register #email, #modal-register #eposta, #modal-register input[type="email"]';
-        if (await page.$(emailSel)) await page.type(emailSel, lmsEmail, { delay: 30 });
+        // Telefon (#phone) - placeholder "5" var, yani 5XXXXXXXXX formatı bekleniyor
+        await page.click('#phone');
+        await page.keyboard.down('Control');
+        await page.keyboard.press('a');
+        await page.keyboard.up('Control');
+        await page.type('#phone', lmsPhone, { delay: 30 });
         
-        // Telefon (Baştaki 0 olmadan yaz)
-        const telSel = '#modal-register input[name="phone"], #modal-register input[name="telefon"], #modal-register input[name="cep_telefonu"], #modal-register input[name="gsm"], #modal-register #phone, #modal-register #telefon';
-        if (await page.$(telSel)) await page.type(telSel, lmsPhone, { delay: 30 });
-        
-        // Parola (Eğer parola kutusu varsa, lmsEmail veya varsayılan bir şifre gir, çünkü zorunlu olabilir)
-        const passSel = '#modal-register input[type="password"], #modal-register input[name="password"], #modal-register input[name="parola"]';
-        const isPassDisabled = await page.$eval(passSel, el => el.disabled).catch(() => true);
+        // Parola (#password) - disabled ise dokunma
+        const isPassDisabled = await page.$eval('#password', el => el.disabled).catch(() => true);
         if (!isPassDisabled) {
-          await page.type(passSel, lmsEmail, { delay: 30 });
+          await page.click('#password');
+          await page.type('#password', lmsEmail, { delay: 30 });
         }
         
-        await new Promise(r => setTimeout(r, 1000));
+        // Doldurulan değerleri logla (debug)
+        const filledValues = await page.evaluate(() => ({
+          name: document.querySelector('#name')?.value,
+          surname: document.querySelector('#surname')?.value,
+          email: document.querySelector('#email')?.value,
+          phone: document.querySelector('#phone')?.value,
+        }));
+        console.log(`Form dolduruldu: Ad=${filledValues.name}, Soyad=${filledValues.surname}, Email=${filledValues.email}, Tel=${filledValues.phone}`);
         
-        // Formu Kaydet
+        await new Promise(r => setTimeout(r, 500));
+        
+        // Kaydet butonuna tıkla
         await page.evaluate(() => {
-          const form = document.querySelector('#modal-register');
-          if (form) {
-            const btn = form.querySelector('button.btn-success') || form.querySelector('button[type="submit"]') || form.querySelector('button.btn-primary');
+          const modal = document.querySelector('#modal-register');
+          if (modal) {
+            const btn = modal.querySelector('button.btn-success') || modal.querySelector('button[type="submit"]');
             if (btn) btn.click();
           }
         });
         
-        // Kaydedilmesini ve modalın kapanmasını bekle
-        await new Promise(r => setTimeout(r, 4000));
+        // Kaydedilmesini bekle
+        await new Promise(r => setTimeout(r, 5000));
+        
+        // Hata mesajı var mı kontrol et
+        const errorMsg = await page.evaluate(() => {
+          // Okinar genelde alert veya toast ile hata gösterir
+          const alerts = document.querySelectorAll('.alert-danger, .toast-error, .error-message, .text-danger');
+          for (const el of alerts) {
+            if (el.offsetParent !== null && el.innerText.trim()) return el.innerText.trim();
+          }
+          return null;
+        });
+        if (errorMsg) {
+          console.log(`Okinar form hatasi: ${errorMsg}`);
+        }
         
         // --- GRUBA ATAMA AŞAMASI ---
         console.log(`Öğrenci ${lmsCourseId} ID'li gruba atanıyor...`);
