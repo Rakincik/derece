@@ -195,19 +195,10 @@ async function runWorker() {
         // --- GRUBA ATAMA AŞAMASI ---
         console.log(`Öğrenci ${lmsCourseId} ID'li gruba atanıyor...`);
         
-        // Kullanıcılar listesine tekrar git (garanti olsun diye)
-        await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'networkidle2' });
-        await new Promise(r => setTimeout(r, 2000));
-        
-        hasModal = await page.$('#modal-register') !== null;
-        if (!hasModal) {
-          await page.evaluate(() => {
-            const links = Array.from(document.querySelectorAll('a'));
-            const target = links.find(l => l.innerText.trim() === 'Kullanıcılar' || l.innerText.includes('Tüm Kullanıcılar'));
-            if (target) target.click();
-          });
-          await new Promise(r => setTimeout(r, 3000));
-        }
+        // Form işlemlerinden sonra tablonun yenilenmesi ve açık kalmış olabilecek hata modallarının 
+        // (örn: 'Bu email zaten var') kapanması için sayfayı tamamen yeniliyoruz.
+        await page.reload({ waitUntil: 'networkidle2' });
+        await new Promise(r => setTimeout(r, 3000));
         
         // Arama Kutusuna E-posta Adresini Yaz (DataTables) - page.type ile gerçek klavye vuruşları
         await page.waitForSelector('input[type="search"]', { timeout: 15000 });
