@@ -54,8 +54,8 @@ async function runWorker() {
     // 1. Okinar'a Giriş Yap
     console.log('Okinar sistemine giriş yapılıyor...');
     
-    // Eğer oturum açıksa login sayfasına gitmeden atlamak için ana sayfaya git
-    await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'networkidle2' });
+    // Eğer oturum açıksa login sayfasına gitmeden atlamak için ana sayfaya git (domcontentloaded ile soket takılmalarını önle)
+    await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'domcontentloaded' });
     
     // Hala login sayfasındaysa (redirect olduysa) giriş yap
     if (page.url().includes('login')) {
@@ -151,10 +151,12 @@ async function runWorker() {
         
         // Kullanıcılar sayfasına git ve doğru sayfada olduğumuzu doğrula
         for (let attempt = 0; attempt < 3; attempt++) {
-          await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'networkidle2' });
-          await new Promise(r => setTimeout(r, 2000));
+          console.log(`Navigasyon denemesi ${attempt + 1}...`);
+          await page.goto(`${OKINAR_URL}/account/`, { waitUntil: 'domcontentloaded' });
+          await new Promise(r => setTimeout(r, 3000));
           
           const currentUrl = page.url();
+          console.log(`Navigasyon sonrasi URL: ${currentUrl}`);
           if (currentUrl.includes('/account')) {
             break; // Doğru sayfadayız
           }
@@ -167,12 +169,12 @@ async function runWorker() {
             const p = await page.$('input[name="password"]') || await page.$('input[type="password"]');
             if (p) await p.type(process.env.OKINAR_PASSWORD);
             const b = await page.$('#btnLogin') || await page.$('button[type="submit"]');
-            if (b) await Promise.all([page.waitForNavigation({waitUntil:'networkidle2',timeout:15000}).catch(()=>{}), b.click()]);
+            if (b) await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded',timeout:15000}).catch(()=>{}), b.click()]);
             await new Promise(r => setTimeout(r, 2000));
           }
-          console.log(`Sayfa navigasyon denemesi ${attempt + 1}, URL: ${currentUrl}`);
         }
         
+        console.log('Tablo arama kutusu bekleniyor...');
         // Arama Kutusuna E-posta Adresini Yaz (DataTables) - Sadece ana tablo (#dtbl) wrapper'ını hedefle
         const searchSelector = '#dtbl_wrapper input[type="search"]';
         const searchExists = await page.$(searchSelector) !== null;
@@ -180,6 +182,7 @@ async function runWorker() {
           throw new Error(`Kullanıcılar tablosu (#dtbl) bulunamadı! Sayfa URL: ${page.url()}`);
         }
         
+        console.log('Arama kutusu temizleniyor...');
         // Önce ana tablonun search inputunu temizle
         await page.evaluate((selector) => {
           const input = document.querySelector(selector);
@@ -189,12 +192,15 @@ async function runWorker() {
           }
         }, searchSelector);
         
+        console.log(`Arama kutusuna yaziliyor: ${lmsEmail}`);
         // Puppeteer ile gerçek typing (Ana tablonun search inputuna yaz)
         await page.type(searchSelector, lmsEmail, { delay: 50 });
         
+        console.log('Filtreleme bekleniyor...');
         // Tablonun filtrelenmesi için bekle
         await new Promise(r => setTimeout(r, 3000));
         
+        console.log('Tablo satirlarinda arama yapiliyor...');
         // "Gruplar" butonuna tıkla (Sadece ana tablodaki (#dtbl) satırlara bak)
         await page.evaluate((email) => {
           const rows = document.querySelectorAll('#dtbl tbody tr');
@@ -213,7 +219,10 @@ async function runWorker() {
           }
         }, lmsEmail);
         
+        console.log('Grup modalinin acilmasi bekleniyor...');
         await page.waitForSelector('#modal-classroom', { visible: true, timeout: 10000 });
+        
+        console.log('JSTree yuklenmesi bekleniyor...');
         // JSTree veya listeden Grubu Seç
         await page.evaluate(async (courseId) => {
           // JSTree API'si varsa tüm düğümleri aç (içinde arama yapabilmek için)
@@ -230,6 +239,7 @@ async function runWorker() {
         // JSTree'nin açılması için biraz animasyon süresi bekle
         await new Promise(r => setTimeout(r, 1500));
         
+        console.log(`Grup seciliyor (ID: ${lmsCourseId})...`);
         await page.evaluate((courseId) => {
           if (window.$ && $.jstree) {
             const jstreeInstance = $.jstree.reference('#modal-classroom .jstree') || $.jstree.reference('.jstree'); 
@@ -250,6 +260,7 @@ async function runWorker() {
         
         await new Promise(r => setTimeout(r, 1000));
         
+        console.log('Grup modali kaydediliyor...');
         // MODALI KAYDET
         await page.evaluate(() => {
           const form = document.querySelector('#modal-classroom form');
@@ -263,6 +274,7 @@ async function runWorker() {
           }
         });
         
+        console.log('Kaydedilmesi bekleniyor...');
         await new Promise(r => setTimeout(r, 4000));
         
         // BAŞARILI - Kuyruğu Güncelle
