@@ -146,6 +146,16 @@ export async function POST(request) {
 
     await prisma.$transaction(async (tx) => {
       for (const product of dbProducts) {
+        // --- CLEANUP PREVIOUS ATTEMPTS ---
+        // Sadece 1 tane BAŞARISIZ veya BEKLİYOR kaydı tutmak için eskileri siliyoruz
+        await tx.order.deleteMany({
+          where: {
+            userId,
+            productId: product.id,
+            paymentStatus: { in: ['PENDING', 'FAILED'] }
+          }
+        });
+
         // Calculate proportional amount for this item
         const itemPrice = product.discountedPrice || product.price;
         let amount = itemPrice;
