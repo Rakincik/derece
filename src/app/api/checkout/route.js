@@ -144,15 +144,22 @@ export async function POST(request) {
     // 7. Create orders in database with status PENDING (we'll approve them in the callback)
     const createdOrders = [];
 
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
     await prisma.$transaction(async (tx) => {
       for (const product of dbProducts) {
         // --- CLEANUP PREVIOUS ATTEMPTS ---
-        // Sadece 1 tane BAŞARISIZ veya BEKLİYOR kaydı tutmak için eskileri siliyoruz
+        // Sadece eski BAŞARISIZ veya 1 saatten eski BEKLİYOR kayıtlarını siliyoruz.
+        // Aktif (yeni açılmış) BEKLİYOR kayıtlarını SİLMEMELİYİZ, aksi halde
+        // kullanıcı o an Shopier'da ödeme yapıyorsa webhook siparişi bulamaz ve kayıt patlar!
         await tx.order.deleteMany({
           where: {
             userId,
             productId: product.id,
-            paymentStatus: { in: ['PENDING', 'FAILED'] }
+            OR: [
+              { paymentStatus: 'FAILED' },
+              { paymentStatus: 'PENDING', createdAt: { lt: oneHourAgo } }
+            ]
           }
         });
 
