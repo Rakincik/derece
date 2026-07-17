@@ -11,6 +11,9 @@ import {
   LayoutGrid, List, ShoppingCart
 } from 'lucide-react';
 import Link from 'next/link';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { tr } from 'date-fns/locale';
 import { turkeyCities } from '@/data/turkeyDb';
 import AdminDropdown from './shared/AdminDropdown';
 import ConfirmModal from './shared/ConfirmModal';
@@ -1879,6 +1882,7 @@ export default function AdminDashboard() {
                     />
 
                     {/* Sales Type Filter */}
+                    {/* Sales Type Filter */}
                     <AdminDropdown
                       value={orderFilterType}
                       onChange={setOrderFilterType}
@@ -1892,20 +1896,89 @@ export default function AdminDashboard() {
                     />
 
                     {/* Date Range Filter */}
-                    <div className="flex items-center gap-2 bg-white border border-slate-200/80 rounded-2xl px-3 py-1.5 h-[42px] shadow-sm overflow-hidden">
+                    <div className="flex items-center gap-2 bg-white border border-slate-200/80 rounded-2xl px-3 py-1.5 h-[42px] shadow-sm relative z-50">
+                      <style>{`
+                        .react-datepicker-wrapper { width: auto; }
+                        .react-datepicker__input-container input {
+                          background: transparent;
+                          font-weight: 700;
+                          color: #334155;
+                          outline: none;
+                          cursor: pointer;
+                          width: 85px;
+                          font-size: 0.75rem;
+                          transition: color 0.2s;
+                        }
+                        .react-datepicker__input-container input:hover {
+                          color: #4f46e5;
+                        }
+                        .react-datepicker {
+                          font-family: inherit;
+                          border: 1px solid #e2e8f0;
+                          border-radius: 1rem;
+                          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+                          padding: 0.5rem;
+                        }
+                        .react-datepicker__header {
+                          background: white;
+                          border-bottom: none;
+                          padding-top: 0.5rem;
+                        }
+                        .react-datepicker__day--selected, .react-datepicker__day--in-selecting-range, .react-datepicker__day--in-range, .react-datepicker__month-text--selected, .react-datepicker__quarter-text--selected, .react-datepicker__year-text--selected {
+                          background-color: #4f46e5;
+                          border-radius: 0.5rem;
+                        }
+                        .react-datepicker__day:hover, .react-datepicker__month-text:hover, .react-datepicker__quarter-text:hover, .react-datepicker__year-text:hover {
+                          border-radius: 0.5rem;
+                        }
+                        .react-datepicker__current-month, .react-datepicker-time__header, .react-datepicker-year-header {
+                          font-weight: 800;
+                          color: #1e293b;
+                          font-size: 0.875rem;
+                        }
+                      `}</style>
                       <div className="flex items-center gap-1.5 text-xs w-full">
-                        <input
-                          type="date"
-                          value={orderFilterStartDate}
-                          onChange={(e) => setOrderFilterStartDate(e.target.value)}
-                          className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600 transition-colors w-[100px] shrink-0"
+                        <DatePicker
+                          selected={orderFilterStartDate ? new Date(orderFilterStartDate) : null}
+                          onChange={(date) => {
+                            if (date) {
+                              const y = date.getFullYear();
+                              const m = String(date.getMonth() + 1).padStart(2, '0');
+                              const d = String(date.getDate()).padStart(2, '0');
+                              setOrderFilterStartDate(`${y}-${m}-${d}`);
+                            } else {
+                              setOrderFilterStartDate('');
+                            }
+                          }}
+                          selectsStart
+                          startDate={orderFilterStartDate ? new Date(orderFilterStartDate) : null}
+                          endDate={orderFilterEndDate ? new Date(orderFilterEndDate) : null}
+                          placeholderText="Başlangıç"
+                          dateFormat="dd.MM.yyyy"
+                          locale={tr}
+                          isClearable
                         />
                         <span className="text-slate-300 font-bold">-</span>
-                        <input
-                          type="date"
-                          value={orderFilterEndDate}
-                          onChange={(e) => setOrderFilterEndDate(e.target.value)}
-                          className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600 transition-colors w-[100px] shrink-0"
+                        <DatePicker
+                          selected={orderFilterEndDate ? new Date(orderFilterEndDate) : null}
+                          onChange={(date) => {
+                            if (date) {
+                              const y = date.getFullYear();
+                              const m = String(date.getMonth() + 1).padStart(2, '0');
+                              const d = String(date.getDate()).padStart(2, '0');
+                              setOrderFilterEndDate(`${y}-${m}-${d}`);
+                            } else {
+                              setOrderFilterEndDate('');
+                            }
+                          }}
+                          selectsEnd
+                          startDate={orderFilterStartDate ? new Date(orderFilterStartDate) : null}
+                          endDate={orderFilterEndDate ? new Date(orderFilterEndDate) : null}
+                          minDate={orderFilterStartDate ? new Date(orderFilterStartDate) : null}
+                          placeholderText="Bitiş"
+                          dateFormat="dd.MM.yyyy"
+                          locale={tr}
+                          isClearable
                         />
                       </div>
                       {(orderFilterStartDate || orderFilterEndDate) && (
