@@ -8,6 +8,21 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
     take: 5
   });
+
+  const lmsJobs = await prisma.lmsQueue.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    include: {
+      order: {
+        select: {
+          id: true,
+          userId: true,
+          productId: true,
+          paymentStatus: true
+        }
+      }
+    }
+  });
   
   let osbLogs = null;
   try {
@@ -22,5 +37,5 @@ export async function GET() {
     osbLogs = { error: e.message };
   }
 
-  return NextResponse.json({ orders, osbLogs });
+  return NextResponse.json({ orders, lmsJobs, osbLogs });
 }
