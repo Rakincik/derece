@@ -263,10 +263,26 @@ export async function POST(request) {
         // The SDK returns checkoutHtml which is an auto-submitting POST form to Shopier,
         // but for digital/custom products Shopier's /s/shipping endpoint throws 1041 Error.
         // So we redirect directly to the product's paymentUrl.
+        // IMPORTANT: Because we use paymentUrl, Shopier OSB webhook will NOT receive our custom 'paymentId' (tr_xxxx).
+        // Instead, Shopier OSB webhook will receive the 'productId' of the product we just created.
+        // Therefore, we MUST update our database to track this order using Shopier's productId!
+        let trackingId = paymentId;
+        if (paymentResult.productId) {
+          const shopierProductId = paymentResult.productId.toString();
+          trackingId = coupon 
+            ? `${shopierProductId}_${coupon.code.toUpperCase().trim()}`
+            : shopierProductId;
+            
+          await prisma.order.updateMany({
+            where: { paymentId },
+            data: { paymentId: trackingId }
+          });
+        }
+
         return NextResponse.json({
           message: 'Shopier ödemesi başlatıldı.',
           paymentUrl: paymentResult.paymentUrl,
-          paymentId
+          paymentId: trackingId
         }, { status: 201 });
       }
 

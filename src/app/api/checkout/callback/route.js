@@ -33,33 +33,44 @@ export async function POST(request) {
 
     // 2. Parse payload
     const payload = parseOsbPayload(res);
-    orderId = payload.orderId || ''; // Our transaction/paymentId
+    const shopierOrderId = payload.orderId || ''; // Shopier's auto-generated Order ID
+    const shopierProductId = payload.productId ? payload.productId.toString() : ''; // The product ID we created
     
-    console.log(`Shopier OSB Callback received for Order ID (paymentId): ${orderId}`);
+    // We use the productId for tracking because we bypassed the checkoutHtml form.
+    // If productId is not found in the payload, fallback to orderId for compatibility
+    orderId = shopierProductId || shopierOrderId; 
+    
+    console.log(`Shopier OSB Callback received - Shopier Order ID: ${shopierOrderId}, Product ID: ${shopierProductId}`);
 
     if (!orderId) {
-      return new Response('Missing Order ID', { status: 400 });
+      return new Response('Missing Order/Product ID', { status: 400 });
     }
 
     // 3. Process payment status update in database
-    // Fetch all pending orders for this transaction
+    // Because we might have appended the coupon code (e.g. 49052613_YAZ20), we use startsWith
     const orders = await prisma.order.findMany({
-      where: { paymentId: orderId },
+      where: { 
+        paymentId: { startsWith: orderId },
+        paymentStatus: 'PENDING'
+      },
       include: { product: true }
     });
 
     if (orders.length === 0) {
-      console.warn(`Shopier Callback: No pending orders found for paymentId: ${orderId}`);
+      console.warn(`Shopier Callback: No pending orders found starting with paymentId: ${orderId}`);
       return new Response('success', { status: 200 }); // Return success so Shopier stops retrying
     }
 
+    // Since startsWith can match multiple if not careful, we get the exact paymentId from the first match
+    const exactPaymentId = orders[0].paymentId;
+
     // 4. Update order statuses to SUCCESS
     await prisma.order.updateMany({
-      where: { paymentId: orderId },
+      where: { paymentId: exactPaymentId },
       data: { paymentStatus: 'SUCCESS' }
     });
 
-    console.log(`Shopier Callback: Marked ${orders.length} orders as SUCCESS for transaction: ${orderId}`);
+    console.log(`Shopier Callback: Marked ${orders.length} orders as SUCCESS for transaction: ${exactPaymentId}`);
 
     // Clear user's abandoned cart
     const userId = orders[0].userId;
@@ -96,19 +107,23 @@ export async function POST(request) {
       }
     }
 
-    // 6. Parse coupon code from paymentId and increment its use count
-    // Format is tr_[random]_[couponCode]
-    const parts = orderId.split('_');
-    if (parts.length > 2) {
-      const couponCode = parts[2];
-      try {
-        await prisma.coupon.update({
-          where: { code: couponCode },
-          data: { uses: { increment: 1 } }
-        });
-        console.log(`Shopier Callback: Coupon usage incremented: ${couponCode}`);
-      } catch (couponErr) {
-        console.error(`Shopier Callback: Coupon (${couponCode}) update error:`, couponErr);
+    // 6. Parse coupon code from exactPaymentId and increment its use count
+    // Format is [productId]_[couponCode] or tr_[random]_[couponCode]
+    const parts = exactPaymentId.split('_');
+    if (parts.length > 1) {
+      // The coupon code is always the last part after the underscore
+      const couponCode = parts[parts.length - 1];
+      // Only process if it actually looks like a coupon (e.g. length > 0)
+      if (couponCode && couponCode.length > 0 && exactPaymentId.includes('_')) {
+        try {
+          await prisma.coupon.update({
+            where: { code: couponCode },
+            data: { uses: { increment: 1 } }
+          });
+          console.log(`Shopier Callback: Coupon usage incremented: ${couponCode}`);
+        } catch (couponErr) {
+          console.error(`Shopier Callback: Coupon (${couponCode}) update error:`, couponErr);
+        }
       }
     }
 
