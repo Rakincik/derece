@@ -188,29 +188,52 @@ async function runWorker() {
         
         await new Promise(r => setTimeout(r, 500));
         
-        // Kaydet butonuna tıkla
-        await page.evaluate(() => {
-          const modal = document.querySelector('#modal-register');
-          if (modal) {
-            const btn = modal.querySelector('button.btn-success') || modal.querySelector('button[type="submit"]');
-            if (btn) btn.click();
-          }
-        });
+        // Kaydet butonuna GERÇEK mouse tıklamasıyla tıkla (jQuery event'lerini tetiklemek için ŞART)
+        await page.click('#modal-register .btn-success');
+        console.log('Kaydet butonuna tiklandi, yanit bekleniyor...');
         
-        // Kaydedilmesini bekle
-        await new Promise(r => setTimeout(r, 5000));
-        
-        // Hata mesajı var mı kontrol et
-        const errorMsg = await page.evaluate(() => {
-          // Okinar genelde alert veya toast ile hata gösterir
-          const alerts = document.querySelectorAll('.alert-danger, .toast-error, .error-message, .text-danger');
-          for (const el of alerts) {
-            if (el.offsetParent !== null && el.innerText.trim()) return el.innerText.trim();
+        // Kaydedilmesini bekle - modal kapandı mı kontrol et (başarılıysa Okinar modalı kapatır)
+        let modalClosed = false;
+        for (let i = 0; i < 10; i++) {
+          await new Promise(r => setTimeout(r, 1000));
+          const isModalVisible = await page.evaluate(() => {
+            const modal = document.querySelector('#modal-register');
+            return modal && modal.classList.contains('in') && modal.style.display !== 'none';
+          });
+          if (!isModalVisible) {
+            modalClosed = true;
+            console.log('Modal kapandi - kullanici basariyla kaydedildi.');
+            break;
           }
-          return null;
-        });
-        if (errorMsg) {
-          console.log(`Okinar form hatasi: ${errorMsg}`);
+        }
+        
+        if (!modalClosed) {
+          // Modal hala açık = form hatası var
+          const modalContent = await page.evaluate(() => {
+            const modal = document.querySelector('#modal-register');
+            if (!modal) return 'Modal bulunamadi';
+            // Hata mesajlarını ara
+            const errorEls = modal.querySelectorAll('.alert, .help-block, .error, .text-danger, .invalid-feedback, span.field-validation-error');
+            const errors = [];
+            errorEls.forEach(el => {
+              const txt = el.innerText.trim();
+              if (txt && txt !== '*' && txt.length > 1) errors.push(txt);
+            });
+            if (errors.length > 0) return errors.join(' | ');
+            // Input validation state kontrol et
+            const invalidInputs = modal.querySelectorAll('input:invalid, input.is-invalid, input.input-validation-error');
+            if (invalidInputs.length > 0) {
+              return Array.from(invalidInputs).map(i => `${i.name || i.id}: validasyon hatasi`).join(', ');
+            }
+            return 'Modal hala acik ama hata mesaji bulunamadi';
+          });
+          console.log(`Okinar form hatasi: ${modalContent}`);
+          // Modalı kapat ve devam et
+          await page.evaluate(() => {
+            const closeBtn = document.querySelector('#modal-register .close') || document.querySelector('#modal-register [data-dismiss="modal"]');
+            if (closeBtn) closeBtn.click();
+          });
+          await new Promise(r => setTimeout(r, 1000));
         }
         
         // --- GRUBA ATAMA AŞAMASI ---
