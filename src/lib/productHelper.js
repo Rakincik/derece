@@ -68,6 +68,7 @@ export function mapProduct(p) {
     isNew: (new Date().getTime() - new Date(p.createdAt).getTime()) < 30 * 24 * 60 * 60 * 1000,
     isFeatured: p.isFeatured,
     isBestseller: p.isBestseller,
+    isOutOfStock: p.isOutOfStock,
     contents: p.contents && p.contents.length > 0 ? p.contents : ['Konu Anlatımı', 'Çözümlü Sorular', 'Mini Testler'],
     outcomes: p.outcomes && p.outcomes.length > 0 ? p.outcomes : ['Konuya tam hakimiyet', 'Net artışı', 'Sınav pratikleri'],
     reviews,
