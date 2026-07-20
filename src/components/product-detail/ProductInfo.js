@@ -28,10 +28,11 @@ export default function ProductInfo({ product }) {
     <div className="space-y-6">
       {/* Badges */}
       <div className="flex flex-wrap gap-2">
+        {product.isOutOfStock && <div className="px-3 py-1.5 bg-red-500 text-white text-xs font-black rounded-lg uppercase tracking-wider shadow-sm">Stok Tükendi</div>}
         <Badge variant="category" icon={TypeIcon}>{product.type}</Badge>
         {product.isNew && <Badge variant="new">Yeni</Badge>}
         {product.isBestseller && <Badge variant="bestseller">Çok Satan</Badge>}
-        {hasDiscount && <Badge variant="discount">%{discountPercentage} İndirim</Badge>}
+        {hasDiscount && !product.isOutOfStock && <Badge variant="discount">%{discountPercentage} İndirim</Badge>}
       </div>
 
       {/* Title */}
@@ -100,15 +101,21 @@ export default function ProductInfo({ product }) {
 
         {/* CTA */}
         <div className="flex gap-3">
-          <Button
-            variant="primary"
-            size="lg"
-            icon={ShoppingCart}
-            className="flex-1"
-            onClick={() => addItem(product)}
-          >
-            Sepete Ekle
-          </Button>
+          {product.isOutOfStock ? (
+            <div className="flex-1 flex items-center justify-center p-3 rounded-xl bg-red-50 text-red-600 font-bold border border-red-200">
+              Stok Tükendi
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              icon={ShoppingCart}
+              className="flex-1"
+              onClick={() => addItem(product)}
+            >
+              Sepete Ekle
+            </Button>
+          )}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

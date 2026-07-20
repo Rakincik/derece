@@ -60,7 +60,8 @@ export async function POST(request) {
 
     const dbProducts = await prisma.product.findMany({
       where: {
-        id: { in: productIds }
+        id: { in: productIds },
+        isActive: true
       }
     });
 

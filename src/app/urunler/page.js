@@ -9,6 +9,7 @@ async function ProductsListLoader() {
   let initialProducts = [];
   try {
     const dbProducts = await prisma.product.findMany({
+      where: { isActive: true },
       include: { category: true },
       orderBy: [
         { sortOrder: 'asc' },

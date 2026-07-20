@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, Users, DollarSign, PlusCircle, Edit3, Trash2, 
   X, Check, AlertCircle, ShoppingBag, Send, BookOpen, Layers, 
-  PlayCircle, Play, FileCheck, HelpCircle, Mail, Key, Gift, Eye, MessageSquare, CheckSquare, Trash, Clock, Menu, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown,
+  PlayCircle, Play, FileCheck, HelpCircle, Mail, Key, Gift, Eye, EyeOff, MessageSquare, CheckSquare, Trash, Clock, Menu, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown,
   Layout, Star, LogOut,
   GraduationCap, Award, Calculator, Compass, Languages, Cpu, Sparkles, PenTool, History, FlaskConical, Globe,
   LayoutGrid, List, ShoppingCart
@@ -127,6 +127,7 @@ export default function AdminDashboard() {
   const [discountedPrice, setDiscountedPrice] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [isBestseller, setIsBestseller] = useState(false);
+  const [isOutOfStock, setIsOutOfStock] = useState(false);
   const [type, setType] = useState('Video Ders Seti');
   const [coverImage, setCoverImage] = useState('');
   const [description, setDescription] = useState('');
@@ -712,6 +713,7 @@ export default function AdminDashboard() {
     setDiscountedPrice('');
     setIsFeatured(false);
     setIsBestseller(false);
+    setIsOutOfStock(false);
     setType('Video Ders Seti');
     setCategoryId(categoriesList[0]?.id || '');
     setCrossSellIds([]);
@@ -746,6 +748,7 @@ export default function AdminDashboard() {
     setDiscountedPrice(product.discountedPrice ? product.discountedPrice.toString() : '');
     setIsFeatured(product.isFeatured || false);
     setIsBestseller(product.isBestseller || false);
+    setIsOutOfStock(product.isOutOfStock || false);
     setType(product.type);
     setCoverImage(product.coverImage);
     setDescription(product.description);
@@ -784,6 +787,7 @@ export default function AdminDashboard() {
       discountedPrice: discountedPrice ? parseFloat(discountedPrice) : null,
       isFeatured,
       isBestseller,
+      isOutOfStock,
       type,
       coverImage,
       description,
@@ -834,6 +838,31 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleProductStatus = async (product) => {
+    const newStatus = !product.isActive;
+    const actionText = newStatus ? 'aktifleştirmek' : 'pasife almak (gizlemek)';
+    if (!(await showConfirm(`Bu ürünü ${actionText} istediğinize emin misiniz?`, 'Durum Değiştir', newStatus ? 'success' : 'warning'))) return;
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...product, isActive: newStatus })
+      });
+
+      if (res.ok) {
+        setSuccess(`Ürün başarıyla ${newStatus ? 'aktifleştirildi' : 'pasife alındı'}.`);
+        fetchData();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Ürün durumu güncellenemedi.');
+      }
+    } catch (err) {
+      setError('Bağlantı hatası oluştu.');
+    }
+  };
   const handleDeleteProduct = async (id) => {
     if (!(await showConfirm('Bu ürünü kalıcı olarak silmek istediğinize emin misiniz?', 'Ürünü Sil', 'danger'))) return;
     setError('');
@@ -2243,7 +2272,12 @@ export default function AdminDashboard() {
                                         </div>
                                       </td>
                                       <td className="py-3 px-3 min-w-[150px]">
-                                        <div className="font-bold text-slate-800 line-clamp-1 text-xs">{product.title}</div>
+                                        <div className="font-bold text-slate-800 line-clamp-1 text-xs flex items-center gap-1.5">
+                                          {product.title}
+                                          {product.isActive === false && (
+                                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-black uppercase tracking-wider">Pasif</span>
+                                          )}
+                                        </div>
                                         <div className="text-[10px] text-slate-400 truncate max-w-[200px] font-medium" title={product.description}>{product.description}</div>
                                       </td>
                                       <td className="py-3 px-3 whitespace-nowrap">
@@ -2285,6 +2319,13 @@ export default function AdminDashboard() {
                                       </td>
                                       <td className="py-3 px-3 text-right">
                                         <div className="flex justify-end gap-1.5">
+                                          <button
+                                            onClick={() => handleToggleProductStatus(product)}
+                                            className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-655 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                                            title={product.isActive === false ? 'Aktifleştir' : 'Pasife Al'}
+                                          >
+                                            {product.isActive === false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                          </button>
                                           <button
                                             onClick={() => handleOpenEditModal(product)}
                                             className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-655 hover:text-slate-900 hover:bg-slate-100 transition-colors"
@@ -3731,6 +3772,7 @@ export default function AdminDashboard() {
         sortOrder={sortOrder} setSortOrder={setSortOrder}
         isFeatured={isFeatured} setIsFeatured={setIsFeatured}
         isBestseller={isBestseller} setIsBestseller={setIsBestseller}
+        isOutOfStock={isOutOfStock} setIsOutOfStock={setIsOutOfStock}
         type={type} setType={setType}
         categoryId={categoryId} setCategoryId={setCategoryId}
         crossSellIds={crossSellIds} setCrossSellIds={setCrossSellIds}

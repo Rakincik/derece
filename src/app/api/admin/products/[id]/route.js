@@ -55,7 +55,7 @@ export async function PUT(request, { params }) {
       pages, videoCount, duration, examCount,
       showDemo, demoUrl, showFaq, faqs, showOutcomes, categoryId,
       showInstructor, instructorName, instructorExperience, instructorDescription, instructorAvatar, instructorImage,
-      sortOrder, crossSellIds, lmsCourseId
+      sortOrder, crossSellIds, lmsCourseId, isActive, isOutOfStock
     } = body;
 
     // Check if product exists
@@ -114,6 +114,8 @@ export async function PUT(request, { params }) {
     if (sortOrder !== undefined) updateData.sortOrder = sortOrder !== '' && sortOrder !== null ? parseInt(sortOrder) : 0;
     if (crossSellIds !== undefined) updateData.crossSellIds = Array.isArray(crossSellIds) ? crossSellIds : [];
     if (lmsCourseId !== undefined) updateData.lmsCourseId = lmsCourseId || null;
+    if (isActive !== undefined) updateData.isActive = Boolean(isActive);
+    if (isOutOfStock !== undefined) updateData.isOutOfStock = Boolean(isOutOfStock);
 
     if (categoryId !== undefined) {
       updateData.categoryId = categoryId || null;
@@ -168,12 +170,19 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Ürün bulunamadı.' }, { status: 404 });
     }
 
-    // Delete associated orders first to avoid foreign key constraint errors
-    await prisma.order.deleteMany({
+    // Sipariş (satış) kontrolü - Eğer satılmış bir ürünse silinmesine izin verme!
+    const orderCount = await prisma.order.count({
       where: { productId: id },
     });
 
-    // Delete product
+    if (orderCount > 0) {
+      return NextResponse.json(
+        { error: 'Bu ürün daha önce satıldığı için silinemez. Silmek yerine düzenleyip pasife alınız. (Silinmesi geçmiş ciro ve satış raporlarınızı bozar!)' },
+        { status: 400 }
+      );
+    }
+
+    // Delete product if no orders exist
     await prisma.product.delete({
       where: { id },
     });

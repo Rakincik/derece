@@ -17,6 +17,7 @@ export default function ProductFormModal({
   sortOrder, setSortOrder,
   isFeatured, setIsFeatured,
   isBestseller, setIsBestseller,
+  isOutOfStock, setIsOutOfStock,
   type, setType,
   categoryId, setCategoryId,
   crossSellIds = [], setCrossSellIds,
@@ -223,7 +224,7 @@ export default function ProductFormModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                   {/* Switch: Featured */}
                   <label className="flex items-center gap-4 cursor-pointer group select-none bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-300 p-4 rounded-2xl transition-all">
                     <div className="relative shrink-0">
@@ -255,6 +256,23 @@ export default function ProductFormModal({
                     <div>
                       <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors block">Çok Satan Ürün</span>
                       <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">&quot;Çok Satan&quot; etiketiyle vurgulansın.</span>
+                    </div>
+                  </label>
+
+                  {/* Switch: isOutOfStock */}
+                  <label className="flex items-center gap-4 cursor-pointer group select-none bg-red-50/50 hover:bg-red-50 border border-red-200/60 hover:border-red-300 p-4 rounded-2xl transition-all">
+                    <div className="relative shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={isOutOfStock}
+                        onChange={(e) => setIsOutOfStock(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-red-700 group-hover:text-red-900 transition-colors block">Stok Tükendi</span>
+                      <span className="text-[10px] text-red-500 font-semibold block mt-0.5">Ürün görünür ama satın alınamaz.</span>
                     </div>
                   </label>
                 </div>

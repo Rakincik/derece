@@ -16,8 +16,13 @@ export async function GET(request, { params }) {
     }
 
     const dbProduct = await prisma.product.findUnique({
-      where: { slug },
-      include: { category: true }
+      where: { 
+        slug: params.slug,
+        isActive: true
+      },
+      include: {
+        category: true,
+      }
     });
 
     if (!dbProduct) {

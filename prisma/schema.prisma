@@ -8,75 +8,77 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // pbkdf2 hash value
-  salt      String   // pbkdf2 salt value
-  name      String?
-  role      String   @default("STUDENT") // STUDENT or ADMIN
-  phone     String?
-  city      String?
-  district  String?
-  tcNo      String?  @unique
-  createdAt DateTime @default(now())
-  orders    Order[]
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String // pbkdf2 hash value
+  salt          String // pbkdf2 salt value
+  name          String?
+  role          String         @default("STUDENT") // STUDENT or ADMIN
+  phone         String?
+  city          String?
+  district      String?
+  tcNo          String?        @unique
+  createdAt     DateTime       @default(now())
+  orders        Order[]
   abandonedCart AbandonedCart?
 }
 
 model Product {
-  id              String   @id @default(uuid())
-  title           String
-  slug            String   @unique
-  price           Float
-  discountedPrice Float?
-  isFeatured      Boolean  @default(false)
-  isBestseller    Boolean  @default(false)
-  type            String   // Video Ders Seti, Dijital Kitap, Deneme Sınavı Paketi, Kombo Paket
-  coverImage      String
-  description     String   @db.Text
-  contents        String[] // PostgreSQL Native String array
-  outcomes        String[] // PostgreSQL Native String array
-  pages           Int?
-  videoCount      Int?
-  duration        String?
-  examCount       Int?
-  showDemo        Boolean  @default(true)
-  demoUrl         String?
-  showFaq         Boolean  @default(true)
-  faqs            Json?
-  showOutcomes    Boolean  @default(true)
-  showInstructor        Boolean  @default(true)
-  instructorName        String   @default("Uzman Eğitmen Kadrosu")
-  instructorExperience  String   @default("10+ Yıl Deneyim")
-  instructorDescription String   @default("DereceUzem eğitmenleri, alanında uzman, binlerce öğrencinin derece yapmasına rehberlik etmiş tecrübeli öğretmenlerden oluşur. Müfredata tam hakimiyet ve yeni nesil soru tarzlarına yönelik özel taktiklerle dersleri işlerler. Video içeriklerimizde konular akılda kalıcı yöntemlerle ve sınav odaklı püf noktalarıyla aktarılır.") @db.Text
-  instructorAvatar      String   @default("E")
+  id                    String    @id @default(uuid())
+  title                 String
+  slug                  String    @unique
+  price                 Float
+  discountedPrice       Float?
+  isFeatured            Boolean   @default(false)
+  isBestseller          Boolean   @default(false)
+  type                  String // Video Ders Seti, Dijital Kitap, Deneme Sınavı Paketi, Kombo Paket
+  coverImage            String
+  description           String    @db.Text
+  contents              String[] // PostgreSQL Native String array
+  outcomes              String[] // PostgreSQL Native String array
+  pages                 Int?
+  videoCount            Int?
+  duration              String?
+  examCount             Int?
+  showDemo              Boolean   @default(true)
+  demoUrl               String?
+  showFaq               Boolean   @default(true)
+  faqs                  Json?
+  showOutcomes          Boolean   @default(true)
+  showInstructor        Boolean   @default(true)
+  instructorName        String    @default("Uzman Eğitmen Kadrosu")
+  instructorExperience  String    @default("10+ Yıl Deneyim")
+  instructorDescription String    @default("DereceUzem eğitmenleri, alanında uzman, binlerce öğrencinin derece yapmasına rehberlik etmiş tecrübeli öğretmenlerden oluşur. Müfredata tam hakimiyet ve yeni nesil soru tarzlarına yönelik özel taktiklerle dersleri işlerler. Video içeriklerimizde konular akılda kalıcı yöntemlerle ve sınav odaklı püf noktalarıyla aktarılır.") @db.Text
+  instructorAvatar      String    @default("E")
   instructorImage       String?
-  categoryId      String?
-  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  sortOrder       Int      @default(0)
-  crossSellIds    String[] @default([]) // Manuel seçilen önerilen ürün ID'leri
-  lmsCourseId     String?  // Okinar tarafındaki Grup/Kurs ID'si
-  createdAt       DateTime @default(now())
-  orders          Order[]
+  categoryId            String?
+  category              Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sortOrder             Int       @default(0)
+  crossSellIds          String[]  @default([]) // Manuel seçilen önerilen ürün ID'leri
+  lmsCourseId           String? // Okinar tarafındaki Grup/Kurs ID'si
+  createdAt             DateTime  @default(now())
+  isActive              Boolean   @default(true)
+  isOutOfStock          Boolean   @default(false)
+  orders                Order[]
 }
 
 model Order {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
   productId     String
-  product       Product  @relation(fields: [productId], references: [id])
+  product       Product   @relation(fields: [productId], references: [id])
   amount        Float
-  paymentStatus String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  paymentStatus String    @default("PENDING") // PENDING, SUCCESS, FAILED
   paymentId     String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
   lmsQueue      LmsQueue?
 }
 
 model Coupon {
   id            String    @id @default(uuid())
   code          String    @unique // E.g. YKS2026, LIMIT20
-  discountType  String    // PERCENTAGE or FIXED
+  discountType  String // PERCENTAGE or FIXED
   discountValue Float
   maxUses       Int       @default(100)
   uses          Int       @default(0)
@@ -99,16 +101,16 @@ model ContactMessage {
 }
 
 model Category {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  slug        String    @unique
-  description String?   @db.Text
-  icon        String    @default("BookOpen")
-  color       String    @default("from-blue-500 to-indigo-600")
-  sortOrder   Int       @default(0)
+  id           String    @id @default(uuid())
+  name         String    @unique
+  slug         String    @unique
+  description  String?   @db.Text
+  icon         String    @default("BookOpen")
+  color        String    @default("from-blue-500 to-indigo-600")
+  sortOrder    Int       @default(0)
   showInNavbar Boolean   @default(true)
-  products    Product[]
-  createdAt   DateTime  @default(now())
+  products     Product[]
+  createdAt    DateTime  @default(now())
 }
 
 model Setting {
@@ -130,7 +132,7 @@ model AbandonedCart {
   id        String   @id @default(uuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     Json     // Sepetteki ürün detayları
+  items     Json // Sepetteki ürün detayları
   subtotal  Float
   updatedAt DateTime @updatedAt
 }
@@ -145,4 +147,3 @@ model LmsQueue {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-

@@ -44,7 +44,12 @@ export default function ProductCard({ product }) {
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-            {hasDiscount && (
+            {product.isOutOfStock && (
+              <div className="px-2 py-1 bg-red-500 text-white text-[10px] font-black rounded-lg uppercase tracking-wider shadow-sm">
+                Stok Tükendi
+              </div>
+            )}
+            {hasDiscount && !product.isOutOfStock && (
               <Badge variant="discount">%{discountPercentage} İndirim</Badge>
             )}
             {product.isNew && <Badge variant="new">Yeni</Badge>}
@@ -55,15 +60,17 @@ export default function ProductCard({ product }) {
 
           {/* Quick Actions */}
           <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleAddToCart}
-              className="p-2.5 rounded-xl bg-accent-400 text-white shadow-lg shadow-accent-400/30 hover:bg-accent-500 transition-colors"
-              title="Sepete Ekle"
-            >
-              <ShoppingCart className="w-4 h-4" strokeWidth={1.5} />
-            </motion.button>
+            {!product.isOutOfStock && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleAddToCart}
+                className="p-2.5 rounded-xl bg-accent-400 text-white shadow-lg shadow-accent-400/30 hover:bg-accent-500 transition-colors"
+                title="Sepete Ekle"
+              >
+                <ShoppingCart className="w-4 h-4" strokeWidth={1.5} />
+              </motion.button>
+            )}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -111,14 +118,20 @@ export default function ProductCard({ product }) {
               )}
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleAddToCart}
-              className="px-3 py-1.5 rounded-lg bg-accent-400/10 text-accent-400 text-xs font-semibold hover:bg-accent-400/20 transition-all border border-accent-400/20"
-            >
-              Sepete Ekle
-            </motion.button>
+            {product.isOutOfStock ? (
+              <span className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold border border-red-200">
+                Stok Tükendi
+              </span>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleAddToCart}
+                className="px-3 py-1.5 rounded-lg bg-accent-400/10 text-accent-400 text-xs font-semibold hover:bg-accent-400/20 transition-all border border-accent-400/20"
+              >
+                Sepete Ekle
+              </motion.button>
+            )}
           </div>
         </div>
       </motion.div>

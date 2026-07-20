@@ -82,7 +82,7 @@ export async function POST(request) {
       showDemo, demoUrl, showFaq, faqs,
       showOutcomes, categoryId,
       showInstructor, instructorName, instructorExperience, instructorDescription, instructorAvatar, instructorImage,
-      sortOrder, crossSellIds, lmsCourseId
+      sortOrder, crossSellIds, lmsCourseId, isOutOfStock
     } = body;
 
     // Validation
@@ -126,6 +126,7 @@ export async function POST(request) {
         discountedPrice: discountedPrice !== undefined && discountedPrice !== '' && discountedPrice !== null ? parseFloat(discountedPrice) : null,
         isFeatured: isFeatured !== undefined ? Boolean(isFeatured) : false,
         isBestseller: isBestseller !== undefined ? Boolean(isBestseller) : false,
+        isOutOfStock: isOutOfStock !== undefined ? Boolean(isOutOfStock) : false,
         type: finalType,
         coverImage,
         description,

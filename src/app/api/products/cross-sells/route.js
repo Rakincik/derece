@@ -11,7 +11,10 @@ export async function POST(request) {
 
     // Get the products currently in the cart to read their crossSellIds and categories
     const cartProducts = await prisma.product.findMany({
-      where: { id: { in: cartItemIds } },
+      where: { 
+        id: { in: cartItemIds },
+        isActive: true 
+      },
       select: { id: true, categoryId: true, crossSellIds: true }
     });
 
@@ -35,7 +38,10 @@ export async function POST(request) {
     // Step 1: Manual Cross Sells
     if (manualCrossSellIds.length > 0) {
       recommendedProducts = await prisma.product.findMany({
-        where: { id: { in: manualCrossSellIds } },
+        where: { 
+          id: { in: manualCrossSellIds },
+          isActive: true
+        },
         select: {
           id: true,
           title: true,
@@ -56,7 +62,8 @@ export async function POST(request) {
       const categoryFallbackProducts = await prisma.product.findMany({
         where: {
           categoryId: { in: Array.from(cartCategoryIds) },
-          id: { notIn: excludeIds }
+          id: { notIn: excludeIds },
+          isActive: true
         },
         select: {
           id: true,
